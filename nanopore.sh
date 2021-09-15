@@ -77,28 +77,20 @@ mkdir -p $WD/PUS7_KD/map_to_recap_assembly
 
 source activate $ENVS/nanocompore_v100rc32/
 
+### AGAINST IVT
+
 #for filename in /hpcnfs/scratch/TSSM/cugolini/cov/analysis/7_samples_extraction/nanocompore/HUXELERATE_RESULTS/extraction/eventalign/IVT/eventalign*; do
 #        base=${filename##*/eventalign_}
 #	/hpcnfs/home/ieo5215/miniconda/envs/nanocompore_v100rc32/bin/nanocompore sampcomp --file_list1 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD/out_eventalign_collapse.tsv --file_list2 "$filename"/out_eventalign_collapse.tsv  --label1 PUS7_KD --label2 IVT --fasta $NANOCOMP_FA --outpath $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD/"$base" --overwrite --downsample_high_coverage 5000 --allow_warnings --pvalue_thr 0.01 --min_coverage 30 --logit --nthreads 3 --bed $NANOCOMP_BED
 #done
 
+
+### WT AGAINST PUS7KD
+
 #/hpcnfs/home/ieo5215/miniconda/envs/nanocompore_v100rc32/bin/nanocompore sampcomp --file_list1 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/WT/out_eventalign_collapse.tsv --file_list2 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD/out_eventalign_collapse.tsv  --label1 WT --label2 PUS7_KD --fasta $NANOCOMP_FA --outpath $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT/ --overwrite --downsample_high_coverage 5000 --allow_warnings --pvalue_thr 0.01 --min_coverage 30 --logit --nthreads 3 --bed $NANOCOMP_BED
 
 ### reduce nanocompore filtering 
 #singularity run -B /hpcnfs/scratch/ docker://tleonardi/nanocompore:v1.0.4 nanocompore sampcomp --file_list1 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/WT/out_eventalign_collapse.tsv --file_list2 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD/out_eventalign_collapse.tsv  --label1 WT --label2 PUS7_KD --fasta $NANOCOMP_FA --outpath $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT_kmers_freq05/ --overwrite --max_invalid_kmers_freq 0.5  --downsample_high_coverage 5000 --allow_warnings --pvalue_thr 0.01 --min_coverage 30 --logit --nthreads 3 --bed $NANOCOMP_BED
-
-### upsampling of KD (KD reads are much less than WT)
-#cp -r  $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD/ $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/
-#tail -n +2 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/out_eventalign_collapse.tsv.idx > $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/nohead
-#for i in {1..6};do cat $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/nohead >> $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/temp; done 
-#cat $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/out_eventalign_collapse.tsv.idx  $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/temp >  $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/final
-#rm $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/out_eventalign_collapse.tsv.idx 
-#rm $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/nohead
-#rm $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/temp
-#mv $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/final $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/out_eventalign_collapse.tsv.idx
-#mv $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/ $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD_upsampled/
-
-#singularity run -B /hpcnfs/scratch/ docker://tleonardi/nanocompore:v1.0.4 nanocompore sampcomp --file_list1 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/WT/out_eventalign_collapse.tsv --file_list2 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD_upsampled/out_eventalign_collapse.tsv  --label1 WT --label2 PUS7_KD --fasta $NANOCOMP_FA --outpath $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT_upsampled/ --overwrite --max_invalid_kmers_freq 0.5  --downsample_high_coverage 5000 --allow_warnings --pvalue_thr 0.01 --min_coverage 30 --logit --nthreads 3 --bed $NANOCOMP_BED
 
 
 ### upsampling of KD (KD reads are much less than WT)
@@ -107,6 +99,11 @@ cp -r  $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD/ $UPSAMP
 tail -n +2 $UPSAMPLED/out_eventalign_collapse.tsv.idx > $UPSAMPLED/nohead
 for i in {1..6};do cat $UPSAMPLED/nohead >> $UPSAMPLED/temp; done
 cat $UPSAMPLED/out_eventalign_collapse.tsv.idx  $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/even/temp >  $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/final
+#rm $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/out_eventalign_collapse.tsv.idx
+#rm $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/nohead
+#rm $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/temp
+#mv $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/final $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/out_eventalign_collapse.tsv.idx
+#mv $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS_KD_upsampled/ $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD_upsampled/
 
 
 #singularity run -B /hpcnfs/scratch/ docker://tleonardi/nanocompore:v1.0.4 nanocompore sampcomp --file_list1 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/WT/out_eventalign_collapse.tsv --file_list2 $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD_upsampled/out_eventalign_collapse.tsv  --label1 WT --label2 PUS7_KD --fasta $NANOCOMP_FA --outpath $WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT_upsampled/ --overwrite --max_invalid_kmers_freq 0.5  --downsample_high_coverage 5000 --allow_warnings --pvalue_thr 0.01 --min_coverage 30 --logit --nthreads 3 --bed $NANOCOMP_BED
