@@ -54,9 +54,8 @@ fancy_scientific <- function(l) {
 
 
 vlab <- theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))
-```
 
-```{r, fig.width=18, fig.height=14}
+### GENERAL DATA 
 
 tx <- read_tsv(bdp("analysis/recappable_assembly/two_datasets/assemblies/pinfish/consensus_extraction/orf_annotate/orf_annotate.bed"), col_names=c("chr", "start", "end", "name", "score", "strand", "cdsStart", "cdsEnd", ".", "ex", "exLen", "exSt"), col_types="cnncncnnnncc")
 
@@ -79,13 +78,10 @@ tx_lengths <-read.table(bdp("analysis/recappable_assembly/two_datasets/assemblie
 tx_lengths[is.na(tx_lengths)] <- 0
 tx_lengths <- as.data.frame(tx_lengths) %>% mutate(sumrow= as.numeric(ex1)  + as.numeric(ex2)+as.numeric(ex3))
 
-
-
-#### blacklist IVT jucntions
+#### blacklist IVT junctions
 
 sitelist <- read_tsv(bdp("scripts_new/backupped_data/sites_blacklist.txt")) 
 colnames(sitelist) <- c("ref_kmer","Modification type","modif")
-
 
 IVT <-read_tsv(bdp("scripts_new/backupped_data/IVT_junctions.bed"), col_names = c("chrom","start","end","id","score","strand"))
 junction_sites <- IVT %>% select(start,end) %>% unlist(use.names=FALSE) %>% sort()
@@ -152,59 +148,26 @@ get_ORF = function(ref_id) {
   return(temp)
 }
 
-```
 
-
-
-### For every transcript of the assembly, a plot for PUS7_KD and WT modifications 
-```{r, fig.width=18, fig.height=14}
-
-#### functions
-
-pvalues_fisher_method = function(pvalues){
-  keep = (pvalues >= 0) & (pvalues <= 1)
-  pvalues[pvalues == 0] = 1e-285
-  lnp = log(pvalues)
-  chisq = (-2) * rowSums(lnp)
-  df = 2 * length(lnp)
-  fisher_pval = stats::pchisq(chisq, df, lower.tail=FALSE)
-  return(fisher_pval)
-}
-
-junc_blacklist = function(tx) {
-  corr_row <- subset(assembly_junction_sites, assembly_junction_sites$id %in% tx)
-  blacklist_vec <- as.numeric(as.vector(corr_row[1,7:12]))
-  blacklist_vec <- blacklist_vec[!is.na(blacklist_vec)]
-  black_int <- vector()
-  for (i in blacklist_vec){
-    temp <- seq(from = i-15, to = i+15, by = 1)
-    black_int <- c(black_int,temp)
-  }
-  black_int <- black_int[which(black_int > 0)] %>% sort()
-  return(black_int)
-}           
-
-get_tx_length = function(ref_id) {
-  tx_length = tx_lengths[with(tx_lengths, tx_lengths$V4 %in% ref_id),]$sumrow
-  return(tx_length)
-}
-
-get_ORF = function(ref_id) {
-  temp <- names[with(names, id %in% ref_id),]$name
-  return(temp)
-}
+### LOAD DATA
 
 tx_list <- list.files(path = "/Volumes/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT/",pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
 
-datasets <- lapply(tx_list, function(x){
+PUS7_KD_WT <- lapply(tx_list, function(x){
   x <- read_tsv(x, col_types="ncccccnnncncn")
   x$SAMPLEID <- (separate(data.frame(A = x$cluster_counts), col = "A" , into = c("X", "Y","Z"), sep = "_(?=[0-9])"))$X
   x <- x[!x$SAMPLEID == "NC", ]
   x <- x %>% mutate(ref_kmer=gsub("T","U", ref_kmer))
 })
 
-datasets <- datasets[sapply(datasets, function(x) dim(x)[1]) > 0] #delete 0-length dataframes
-total <- bind_rows(datasets) %>%
+```
+
+
+### For every transcript of the assembly, a plot for PUS7_KD and WT modifications 
+```{r, fig.width=18, fig.height=14}
+
+PUS7_KD_WT <- PUS7_KD_WT[sapply(PUS7_KD_WT, function(x) dim(x)[1]) > 0] #delete 0-length dataframes
+total <- bind_rows(PUS7_KD_WT) %>%
   rowwise() %>%
   mutate(ORF=get_ORF(ref_id)) %>%
   mutate(ref_id = (separate(data.frame(A = ref_id), col = "A" , into = c("X", "Y"), sep = "::"))$X) %>%
@@ -213,20 +176,20 @@ total <- bind_rows(datasets) %>%
   mutate(start_end_sites=ifelse(pos< 100, "pstart", NA)) %>%
   mutate(start_end_sites=ifelse(pos>(tx_length-40), "pend",start_end_sites )) %>%
   left_join(sitelist,by="ref_kmer") %>%
-  dplyr::rename(IUPAC=`Modification type`)
+  dplyr::rename(IUPAC=`Modification type`) %>%
+  mutate(IVT = ifelse(as.integer(genomicPos) %in% blacklist_IVT, "IVT junction", "No junction"))
 total$IUPAC[is.na(total$IUPAC)] <- "Others"
-total <- subset(total, !(genomicPos %in% blacklist_IVT))
-blacklist_junctions <- junc_blacklist(unique(total$ref_id))
-total <- subset(total, !(genomicPos %in% blacklist_junctions))
 total_split <- split(total,total$ref_id)
 
 
 lapply(total_split,function(x){
-  x %>%{
+  blacklist_junctions <- junc_blacklist(unique(x$ref_id))
+  x %>% 
+    mutate(IVT = ifelse(as.integer(genomicPos) %in% blacklist_junctions, "ORF junction", IVT))%>%
+    {
     ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),  color=IUPAC)) +
       geom_point(size=2) +
       scale_color_manual(values=c("#FF0000","#999999", "#56B4E9")) +
-      #ggrepel::geom_label_repel(data=filter(., (-log10(GMM_logit_pvalue)>=1 & abs(Logit_LOR)>0.5) ) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=8) +
       ggtitle(unique(x$ORF), subtitle = unique(x$ref_id)) +
       theme_bw(28)
   }
@@ -339,8 +302,7 @@ final <- assign_fragment(final)
 final <- final %>%
   mutate(tx_cov=factor(tx_cov)) %>%
   mutate(IVT=factor(IVT)) %>%
-  mutate(`Modification type`=factor(`Modification type`)) %>%
-  subset(final$GMM_logit_pvalue<=0.01)
+  mutate(`Modification type`=factor(`Modification type`)) 
 
 
 p <- ggplot(final, aes(x=genomicPos, y=-log10(GMM_logit_pvalue), size=tx_cov, color=`Modification type`, shape=IVT)) +
@@ -348,8 +310,8 @@ p <- ggplot(final, aes(x=genomicPos, y=-log10(GMM_logit_pvalue), size=tx_cov, co
       scale_color_manual(breaks =c("Others","DRACH","UGUAR"), values=c("black","blue","deeppink")) +
       scale_size_discrete(name = "N° of transcripts") +
       scale_shape_manual(values=c(3, 16, 14))+
-      #ggrepel::geom_label_repel(data=filter(x, -log10(GMM_logit_pvalue)>=5), aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5) +
-      ggtitle("Modifications occurrence over all transcripts (GMM_pvalue<0.01) ") +
+      ggrepel::geom_label_repel(data=filter(final, -log10(GMM_logit_pvalue)>=5), aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5) +
+      ggtitle("Modifications occurrence over all transcripts  ") +
       theme_bw(28) +
     theme(plot.title = element_text(size = 30, face = "bold"),
             plot.subtitle = element_text(size = 28),
@@ -411,7 +373,6 @@ toplot <- lapply(X = tmp,FUN = function(y){
 })
 
 final <- bind_rows(toplot)
-
 final <- final %>%
   mutate(IVT = ifelse(as.integer(genomicPos) %in% blacklist_IVT, "IVT junction", "No junction"))
 
@@ -614,8 +575,14 @@ total_WT <- bind_rows(datasets) %>%
   dplyr::rename(IUPAC=`Modification type`)
 total_WT$IUPAC[is.na(total_WT$IUPAC)] <- "Others"
 total_WT <- subset(total_WT, !(genomicPos %in% blacklist_IVT))
-blacklist_junctions <- junc_blacklist(unique(total_WT$ref_id))
-total_WT <- subset(total_WT, !(genomicPos %in% blacklist_junctions))
+total_WT <- total_WT %>%
+  mutate(IVT = ifelse(as.integer(genomicPos) %in% blacklist_IVT, "IVT junction", "No junction"))
+for(i in length(total_WT$ref_id)){
+  bl_temp <- junc_blacklist(total_WT$ref_id[i])
+  total_WT$IVT[i] <- ifelse(as.integer(total_WT$genomicPos[i]) %in% bl_temp, "ORF junction", total_WT$IVT[i])
+}
+
+
 
 total_WT_PUS7KD <- rbind(total,total_WT)
 total_UGUAR <- total_WT_PUS7KD %>%
@@ -643,7 +610,10 @@ dev.off()
 
 ## calculate tables for p-value separation between WT vs IVT and KD vs IVT per transcript model
 
-total_WT_PUS7KD <- full_join(total,total_WT,by=c("pos","chr","ref_id","genomicPos","strand","ref_kmer","ORF","tx_length","IUPAC")) %>%
+total_UGUAR <- total %>% subset(IUPAC== "UGUAR")
+total_WT_UGUAR <-total_WT %>% subset(IUPAC== "UGUAR")
+
+total_WT_PUS7KD <- full_join(total_UGUAR,total_WT_UGUAR,by=c("pos","chr","ref_id","strand","ref_kmer","ORF","tx_length","IUPAC")) %>%
   subset(IUPAC== "UGUAR")
 total_WT_PUS7KD <- assign_fragment(total_WT_PUS7KD)
 total_WT_PUS7KD$GMM_logit_pvalue.y[is.na(total_WT_PUS7KD$GMM_logit_pvalue.y)] <- 1
