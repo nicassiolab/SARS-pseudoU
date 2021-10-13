@@ -40,6 +40,14 @@ ext_gene_name <- function(x){
   x<-str_extract(x, '(?<=gene_name\\s)\\w+')
   return(x)
 }
+ext_gene_id <- function(x){
+  x<-str_extract(x, '(?<=gene_id\\s)\\w+')
+  return(x)
+}
+ext_tx_id <- function(x){
+  x<-str_extract(x, '(?<=transcript_id\\s)\\w+')
+  return(x)
+}
 
 # Assembly data
 
@@ -89,13 +97,11 @@ colnames(canonicity) <- c("ref_id","canonicity")
 # Human transcriptome gtf data
 
 gtf <- read.table('/Volumes/scratch/FN/camilla/nanopore/data/Homo_sapiens.GRCh38.98.gtf', header = FALSE, sep = '\t')
+gtf$gene_name <- sapply(gtf$V9,ext_gene_name)
+gtf$gene_id <- sapply(gtf$V9,ext_gene_id)
+gtf$transcript_id <- sapply(gtf$V9,ext_tx_id)
 gtf_tx <- subset(gtf,gtf$V3 == "transcript") %>%
-  separate(V9, c("gid", "gene_id", "gv", "gene_version", "tid", "transcript_id", "tv", "transcript_version", "gn", "gene_name", "gs", "gene_source", "gb" ,"gene_biotype", "tn", "transcript_name", "ts", "transcript_source", "tb", "transcript_biotype", "tbs", "tag basic", "tsl", "transcript_support_level"
-  ), sep = " ") %>%
-  select(gene_id,transcript_id) %>%
-  mutate(gene_id = substr(gene_id,1,nchar(gene_id)-1)) %>%
-  mutate(transcript_id = substr(transcript_id,1,nchar(transcript_id)-1)) 
-gtf$V9 <- sapply(gtf$V9,ext_gene_name)
+  select(gene_id,transcript_id,gene_name) 
 
 
 
@@ -386,26 +392,16 @@ cor.test(x = orf_counts$PUS7_KD_C34,y = 1/orf_counts$length,method = "pearson" )
 
 
 
-####HUMAN
+###### NanoCount diff exp for WT and KD mapped to the HUMAN TRANSCRIPTOME
 
-gtf <- read.table('/Volumes/scratch/FN/camilla/nanopore/data/Homo_sapiens.GRCh38.98.gtf', header = FALSE, sep = '\t')
-gtf_tx <- subset(gtf,gtf$V3 == "transcript") %>%
-  separate(V9, c("gid", "gene_id", "gv", "gene_version", "tid", "transcript_id", "tv", "transcript_version", "gn", "gene_name", "gs", "gene_source", "gb" ,"gene_biotype", "tn", "transcript_name", "ts", "transcript_source", "tb", "transcript_biotype", "tbs", "tag basic", "tsl", "transcript_support_level"
-  ), sep = " ") %>%
-  select(gene_id,transcript_id) %>%
-  mutate(gene_id = substr(gene_id,1,nchar(gene_id)-1)) %>%
-  mutate(transcript_id = substr(transcript_id,1,nchar(transcript_id)-1)) 
-gtf$V9 <- sapply(gtf$V9,ext_gene_name)
-
-sampleC37_list <- list.files(bdp("PUS7_KD_C37/map_to_human_transcriptome/counts"), full.names = TRUE)
+sampleC37_list <- list.files(bdp("PUS7_KD_C37/map_to_human_transcriptome/NANOCOUNT/counts"), full.names = TRUE)
 sampleC37_counts <- lapply(sampleC37_list, function(x){
   sample_name <- gsub("\\counts.tsv","C37",x)
   sample_name <- gsub(".*/","",sample_name)
   x<-read.csv(x,header = TRUE, sep = "\t") %>%
     select(transcript_name,tpm) %>%
-    dplyr::rename(!!sample_name:=tpm)
+    dplyr::rename(!!sample_name:=tpm) #assigns sample_name to the column named tpm
 })
-
 
 countData <- sampleC37_counts %>%
   purrr::reduce(full_join, by="transcript_name")
@@ -415,22 +411,35 @@ countData[2:ncol(countData)] <- lapply(countData[2:ncol(countData)], as.integer)
 countData <- countData %>% 
   #subset(PUS7_KD_C37>10 & WT_C37>10) %>%
   mutate(c37fc=WT_C37/PUS7_KD_C37)%>%
-  dplyr::rename(id=transcript_name)%>%
-  separate(id,into = c("id","strand"),sep = "\\(")
-
-countData <- countData %>% 
-  dplyr::rename(transcript_id=id)
+  dplyr::rename(transcript_id=transcript_name)%>%
+  separate(transcript_id,into = c("transcript_id","strand"),sep = "\\(")
 
 countData <- countData %>% 
   left_join(gtf_tx,by='transcript_id')
 
 ciao <- countData %>% 
-  dplyr::group_by(gene_id)%>%
-  summarise(WT_C37=sum(WT_C37),PUS7_KD_C37=sum(PUS7_KD_C37))
+  dplyr::group_by(gene_name)%>%
+  summarise(WT_C37=sum(WT_C37),PUS7_KD_C37=sum(PUS7_KD_C37)) %>%
+  mutate(c37fc=WT_C37/PUS7_KD_C37) %>%
+  subset(c37fc!="NaN")
 
-ciao <- ciao %>%
-  mutate(c37fc=PUS7_KD_C37/WT_C37)
 
+#  Volcano Plot
+par(mar=c(5,5,5,5), cex=1.0, cex.main=1.4, cex.axis=1.4, cex.lab=1.4)
+topT <- as.data.frame(ciao)
+
+#Adjusted P values (FDR Q values)
+with(topT, plot(log2FoldChange, -log10(padj), pch=20, main="Volcano plot", cex=1.0, xlab=bquote(~Log[2]~fold~change), ylab=bquote(~-log[10]~Q~value)))
+
+with(subset(topT, padj<0.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(padj), pch=20, col="red", cex=0.5))
+
+#with(subset(topT, padj<1 ), text(log2FoldChange, -log10(padj), labels=subset(rownames(topT), topT$padj<1 ), cex=0.8, pos=3))
+
+#Add lines for absolute FC>2 and P-value cut-off at FDR Q<0.05
+abline(v=0, col="black", lty=3, lwd=1.0)
+abline(v=-2, col="black", lty=4, lwd=2.0)
+abline(v=2, col="black", lty=4, lwd=2.0)
+abline(h=-log10(max(topT$pvalue[topT$padj<0.05], na.rm=TRUE)), col="black", lty=4, lwd=2.0)
 
 
 
