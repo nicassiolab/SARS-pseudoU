@@ -40,10 +40,9 @@ mkdir -p  $DATA/SARS_CoV_2_genome/indices
 #samtools view -h -Sb $WD/miseq/map_to_genome/Aligned.out.sam > $WD/miseq/map_to_genome/ALIGNMENTS_BACKUP/Aligned.out.bam
 #samtools view -F 2316 -Sb $WD/miseq/map_to_genome/Aligned.out.sam > $WD/miseq/map_to_genome/Aligned.out.bam
 #bedtools bamtobed -bed12 -i $WD/miseq/map_to_genome/Aligned.out.bam > $WD/miseq/map_to_genome/Aligned.out.bed
+#awk 'BEGIN{ORS=" "}{if($10<4){split($12,a,","); print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11;for(i=1;i<=length(a);i++) print a[i]+$2; print "\n"}}' $WD/miseq/map_to_genome/Aligned.out.bed| sort -k10,10n -k12,12n -k13,13n -k14,14n | awk -v OFS="\t" '$1=$1' | awk 'BEGIN{ORS=" "}{print $1,$2,$3,$4,$5,"+",$7,$8,$9,$10,$11; for(i=12;i<=NF;i++) printf "%s," ,($i-$2); print "\n"}' |awk -v OFS="\t" '$1=$1'| awk 'BEGIN{OFS="\t"}{$12=substr($12,1,length($12)-1); print $0}' | awk '$10>1' > $WD/miseq/map_to_genome/junction_sorted_2_3_ex.bed	###awk script to sort the bed file according to junctions
 
 
-
-#bedparse introns $WD/liverpool_illumina_data/Aligned.out.bed > $WD/liverpool_illumina_data/introns.bed
 
 
 
