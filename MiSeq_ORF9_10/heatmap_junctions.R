@@ -2,7 +2,7 @@ library(tidyverse)
 library(dplyr)
 library(magic)
 
-ROOTDIR="/Volumes/scratch/FN/TL/cugolini/cov/analysis"
+ROOTDIR="/Volumes/scratch/FN/TL/cugolini/cov/analysis/miseq/map_to_genome"
 
 # Function the returns full path from basedir
 bdp <- function(relpath){
@@ -11,7 +11,7 @@ bdp <- function(relpath){
 
 bedfile <-
   read.table(
-    file = "/Users/camillaugolini/Desktop/junction_sorted_2_3_ex.bed",
+    file = "Aligned.out.bed",
     col.names = c(
       "chr",
       "start",
@@ -99,26 +99,26 @@ p <- df %>%
       theme_bw(30) + vlab 
   }
 p
-ggsave(p,file="/Users/camillaugolini/Desktop/junctions_heatmap.eps", width = 35,height = 20)
+ggsave(p,file=bdp("junctions_heatmap.eps"), width = 35,height = 20)
 
 
 orf9d_extr<- subset(two_ex,firstblockend>=30 & firstblockend<100) %>%
   subset(start2>=29100 & start2<29180)
 
 orf9d_extr<- subset(bedfile,bedfile$name %in% orf9d_extr$name)
-write.table(orf9d_extr, sep = "\t",quote=F,row.names = F,col.names = F, file="/Users/camillaugolini/Desktop/orf9d.bed")
+write.table(orf9d_extr, sep = "\t",quote=F,row.names = F,col.names = F, file=bdp("orf9d.bed"))
 
 
 orf10_int_extr<- subset(two_ex,firstblockend>=30 & firstblockend<100) %>%
   subset(start2>=29610 & start2<29630)
 orf10_int_extr<-head(orf10_int_extr,150) #extract first 150 reads as an example for the track
 orf10_est<- subset(bedfile,bedfile$name %in% orf10_int_extr$name)
-write.table(orf10_int, sep = "\t",quote=F,row.names = F,col.names = F, file="/Users/camillaugolini/Desktop/orf10_int.bed")
+write.table(orf10_int, sep = "\t",quote=F,row.names = F,col.names = F, file=bdp("orf10_int.bed"))
 
 
 orf10_est_extr<- subset(two_ex,firstblockend>=30 & firstblockend<100) %>%
   subset(start2>=29500 & start2<29540)
 orf10_est_extr<-head(orf10_est_extr,150)
 orf10_est<- subset(bedfile,bedfile$name %in% orf10_est_extr$name)
-write.table(orf10_est, sep = "\t",quote=F,row.names = F,col.names = F, file="/Users/camillaugolini/Desktop/orf10_est.bed")
+write.table(orf10_est, sep = "\t",quote=F,row.names = F,col.names = F, file=bdp("orf10_est.bed"))
 
