@@ -36,6 +36,15 @@ two_ex <- bedfile %>%
   mutate(start2=(as.numeric(start2)+as.numeric(start)))%>%
   mutate(firstblockend=as.numeric(start)+as.numeric(size1))
 
+
+#### code to build coverage bedgraph track for junction ends for canonical reads
+twoex_track_canonical <- two_ex%>%
+  subset(firstblockend>=30 & firstblockend<100)%>%
+  mutate(start=start2,end=(start2+1))%>%
+  select(1:6)
+write.table(twoex_track_canonical, sep = "\t",quote=F,row.names = F,col.names = F, file=bdp("twoex_track_canonical.bed"))
+######################
+
 breaks <- seq(0, 30000, by = 1000)
 intervals <- data.frame(breaks,shift(breaks,i=-1))
 intervals <- head(intervals,-1)
