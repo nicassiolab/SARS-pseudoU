@@ -118,27 +118,35 @@ UPSAMPLED="$WD/PUS7_KD/map_to_recap_assembly/NANOCOMPORE/eventalign/PUS7_KD_IVT_
 mkdir -p $WD/PUS7_KD/map_to_human_transcriptome
 mkdir -p $WD/PUS7_KD/map_to_human_transcriptome/ALIGNMENTS_BACKUP/
 mkdir -p $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/counts
+mkdir -p $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/
 
-singularity exec -B /hpcnfs/scratch/ $singpore minimap2 -ax map-ont -uf -p 0 -N 10 -t 12 -I100g $REF_DATA/transcriptome_fasta_primary_assembly.fa $DATA/fastq_PUS7/WT.fastq > $WD/PUS7_KD/map_to_human_transcriptome/WT.sam
-singularity exec -B /hpcnfs/scratch/ $singpore minimap2 -ax map-ont -uf -p 0 -N 10 -t 12 -I100g $REF_DATA/transcriptome_fasta_primary_assembly.fa $DATA/fastq_PUS7/PUS7_KD.fastq > $WD/PUS7_KD/map_to_human_transcriptome/PUS7_KD.sam
-for filename in $WD/PUS7_KD/map_to_human_transcriptome/*.sam; do
-        name=${filename##*/}
-        base=${name%.sam}
+#singularity exec -B /hpcnfs/scratch/ $singpore minimap2 -ax map-ont -uf -p 0 -N 10 -t 12 -I100g $REF_DATA/transcriptome_fasta_primary_assembly.fa $DATA/fastq_PUS7/WT.fastq > $WD/PUS7_KD/map_to_human_transcriptome/WT.sam
+#singularity exec -B /hpcnfs/scratch/ $singpore minimap2 -ax map-ont -uf -p 0 -N 10 -t 12 -I100g $REF_DATA/transcriptome_fasta_primary_assembly.fa $DATA/fastq_PUS7/PUS7_KD.fastq > $WD/PUS7_KD/map_to_human_transcriptome/PUS7_KD.sam
 
-        singularity exec -B /hpcnfs/scratch/ $singpore samtools view -h -Sb $filename > $WD/PUS7_KD/map_to_human_transcriptome/ALIGNMENTS_BACKUP/"$base".bam
-        singularity exec -B /hpcnfs/scratch/ $singpore samtools view -h -F 2324 -b $WD/PUS7_KD/map_to_human_transcriptome/ALIGNMENTS_BACKUP/"$base".bam >  $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base".bam
-        singularity exec -B /hpcnfs/scratch/ $singpore samtools sort $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base".bam > $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base"_sorted.bam
-        singularity exec -B /hpcnfs/scratch/ $singpore samtools index $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base"_sorted.bam
-        rm $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base".bam
+#for filename in $WD/PUS7_KD/map_to_human_transcriptome/ALIGNMENTS_BACKUP/*.bam; do
+        #name=${filename##*/}
+        #base=${name%.bam}
+
+        #singularity exec -B /hpcnfs/scratch/ $singpore samtools view -h -Sb $filename > $WD/PUS7_KD/map_to_human_transcriptome/ALIGNMENTS_BACKUP/"$base".bam
+        #singularity exec -B /hpcnfs/scratch/ $singpore samtools view -h -F 2324 -b $filename >  $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base".bam
+        #singularity exec -B /hpcnfs/scratch/ $singpore samtools sort $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base".bam > $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base"_sorted.bam
+        #singularity exec -B /hpcnfs/scratch/ $singpore samtools index $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base"_sorted.bam
+        #rm $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_human_transcriptome/"$base".bam
 
 
-        singularity exec -B /hpcnfs/scratch/ $singpore samtools view -h -F 2068 -Sb $filename > $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_filtered_np.bam
-        singularity exec -B /hpcnfs/scratch/ $singpore samtools sort $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_filtered_np.bam > $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_sorted_np.bam
-        singularity exec -B /hpcnfs/scratch/ $singpore samtools index $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_sorted_np.bam
-        rm $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_filtered_np.bam
-        singularity exec -B /hpcnfs/scratch/ $singtot NanoCount -3 10 -5 10 -p align_score -x -i $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_sorted_np.bam -o $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/counts/"$base"_counts.tsv
-        rm $WD/PUS7_KD/map_to_human_transcriptome/"$base".sam
+        #singularity exec -B /hpcnfs/scratch/ $singpore samtools view -h -F 2068 -Sb $filename > $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_filtered_np.bam
+        #singularity exec -B /hpcnfs/scratch/ $singpore samtools sort $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_filtered_np.bam > $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_sorted_np.bam
+        #singularity exec -B /hpcnfs/scratch/ $singpore samtools index $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_sorted_np.bam
+        #rm $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_filtered_np.bam
+        #singularity exec -B /hpcnfs/scratch/ $singtot NanoCount -3 10 -5 10 -p align_score -x -i $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/"$base"_sorted_np.bam -o $WD/PUS7_KD/map_to_human_transcriptome/NANOCOUNT/counts/"$base"_counts.tsv
+        #rm $WD/PUS7_KD/map_to_human_transcriptome/"$base".sam
 
-done
+#done
 
+###	F5C (eventalign)
+
+mkdir -p $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/eventalign
+/hpcnfs/scratch/TSSM/cugolini/tools/f5c/f5c-v0.6/f5c_x86_64_linux eventalign --rna --min-mapq 0 -t 20 -r $DATA/fastq_PUS7/PUS7_KD.fastq -b $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_transcriptome/PUS7_KD_sorted.bam --g $REF_DATA/transcriptome_fasta_primary_assembly.fa --samples --print-read-names --scale-events | singularity exec -B /hpcnfs/scratch/ /hpcnfs/scratch/TSSM/cugolini/cov/img/nanocompore_8d6a70c.img  NanopolishComp Eventalign_collapse -t 20 -o $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/eventalign/PUS7_KD/
+
+#/hpcnfs/scratch/TSSM/cugolini/tools/f5c/f5c-v0.6/f5c_x86_64_linux eventalign --rna --min-mapq 0 -t 20 -r $DATA/fastq_PUS7/WT.fastq -b $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/map_to_transcriptome/WT_sorted.bam --g $REF_DATA/transcriptome_fasta_primary_assembly.fa --samples --print-read-names --scale-events | singularity exec -B /hpcnfs/scratch/ /hpcnfs/scratch/TSSM/cugolini/cov/img/nanocompore_8d6a70c.img  NanopolishComp Eventalign_collapse -t 20 -o $WD/PUS7_KD/map_to_human_transcriptome/NANOCOMPORE/eventalign/WT	
 

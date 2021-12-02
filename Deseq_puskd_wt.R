@@ -14,6 +14,7 @@ library(ComplexHeatmap)
 library(circlize)
 library(purrr)
 library(pheatmap)
+library(topGO)
 
 
 ## Datasets
@@ -47,6 +48,17 @@ ext_gene_id <- function(x){
 ext_tx_id <- function(x){
   x<-str_extract(x, '(?<=transcript_id\\s)\\w+')
   return(x)
+}
+
+fancy_scientific <- function(l) {
+  # turn in to character string in scientific notation
+  l <- format(l, scientific = TRUE)
+  # quote the part before the exponent to keep all the digits
+  l <- gsub("^(.*)e", "'\\1'e", l)
+  # turn the 'e+' into plotmath format
+  l <- gsub("e", "%*%10^", l)
+  # return this as an expression
+  parse(text=l)
 }
 
 # Assembly data
@@ -137,13 +149,13 @@ countData[is.na(countData)] <- 0
 countData[2:ncol(countData)] <- lapply(countData[2:ncol(countData)], as.integer)
 
 # Create metadata
-a <- c("PUS7_KD_C37","WT_C34","WT_C37")
+a <- c("PUS7_KD_C37","WT_C37","WT_C34")
 b <- c('kd','wt','wt')
 c <- c("CaCo2","CaCo2","CaCo2")
 metaData <- data.frame(a,b,c)
 colnames(metaData)<- c("id","dex","celltype")
-
-
+ ciao <- as.data.frame(res)
+plotDispEsts(dds)
 # Transform data
 # create object
 dds <- DESeqDataSetFromMatrix(countData=countData, 
@@ -219,8 +231,9 @@ countData <- sample_counts %>%
 countData[is.na(countData)] <- 0
 countData[2:ncol(countData)] <- lapply(countData[2:ncol(countData)], as.integer)
 
+
 # Create metadata
-a <- c("PUS7_KD_C34","WT_C34","WT_C37")
+a <- c("PUS7_KD_C34","WT_C34","WT_C37") ### THE ORDER OF THE METADATA MUST BE THE SAME OF THE TABLE
 b <- c('kd','wt','wt')
 c <- c("CaCo2","CaCo2","CaCo2")
 metaData <- data.frame(a,b,c)
@@ -294,7 +307,7 @@ dev.off()
 
 
 ################################################################################
-#######################   ########################################
+####################### compare tpms  ########################################
 
 # Load the data
 sampleC37_list <- list.files(bdp("PUS7_KD_C37/map_to_recap_assembly/NANOCOUNT/counts"), full.names = TRUE)
@@ -356,77 +369,207 @@ orf_counts <- orf_counts %>%
   left_join(mean_lengths,by="name")
 
 #corr between FC of the two samples in orf and tx counts
-ggplot(canonical_counts, aes(x=c34fc, y=c37fc)) +
+p<-ggplot(canonical_counts, aes(x=c34fc, y=c37fc)) +
   geom_point() +
-  theme_bw() +
-  ylim(0,5)
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=canonical_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  stat_cor(method = "pearson", label.x = 0.5)+
+  ggtitle("Scatterplot of FC(PUS7kd/WT) in C34 and C37 samples",subtitle = "Points are canonical transcript models")
 
-ggplot(orf_counts, aes(x=c34fc, y=c37fc)) +
+ggplot(as.data.frame(PUS7_KD_WT), aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue))) +
   geom_point() +
-  theme_bw() +
-  ylim(0,5)+xlim(0,5)
-cor.test(x = orf_counts$c34fc,y = orf_counts$c37fc,method = "pearson" )
+  theme_bw(28)
+p0<-ggplot(orf_counts, aes(x=c34fc, y=c37fc)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=orf_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of FC(PUS7kd/WT) in C34 and C37 samples",subtitle = "Points are orfs") +
+  stat_cor(method = "pearson", label.x = 0.5)
+
+
+#corr between tpms of the two samples in orf counts
+p1<- ggplot(orf_counts, aes(x=WT_C37, y=PUS7_KD_C37)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=orf_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  stat_cor(method = "pearson") +
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of counts in C37 samples",subtitle = "Points are orfs")
+
+p2 <- ggplot(orf_counts, aes(x=WT_C34, y=PUS7_KD_C34)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=orf_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  stat_cor(method = "pearson") +
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of counts in C34 samples",subtitle = "Points are orfs")
+
+ggarrange(p1,p2)
 
 #corr between tpms of the two samples in tx counts
-ggplot(orf_counts, aes(x=WT_C37, y=PUS7_KD_C37)) +
+p3<- ggplot(canonical_counts, aes(x=WT_C37, y=PUS7_KD_C37)) +
   geom_point() +
-  ggrepel::geom_label_repel(data=canonical_counts, aes(label=name), colour="black", size=5)+
-  theme_bw() +geom_smooth(method = "lm")
-cor.test(x = canonical_counts$WT_C37,y = canonical_counts$PUS7_KD_C37,method = "pearson" )
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=canonical_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  stat_cor(method = "pearson") +
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of counts in C37 samples",subtitle = "Points are tx counts")
 
-ggplot(orf_counts, aes(x=WT_C34, y=PUS7_KD_C34)) +
+p4 <- ggplot(canonical_counts, aes(x=WT_C34, y=PUS7_KD_C34)) +
   geom_point() +
-  theme_bw() +ylim(0,300000)+xlim(0,300000)
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=canonical_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  stat_cor(method = "pearson") +
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of counts in C34 samples",subtitle = "Points are tx counts")
 
-cor.test(x = canonical_counts$WT_C34,y = canonical_counts$PUS7_KD_C34,method = "pearson" )
 
 #corr between tpms and length of the two samples in tx counts
-ggplot(orf_counts, aes(x=PUS7_KD_C37, y=1/length)) +
+p5<-ggplot(orf_counts, aes(x=WT_C34, y=1/length)) +
   geom_point() +
-  theme_bw() 
-cor.test(x = orf_counts$WT_C37,y = 1/orf_counts$length,method = "pearson" )
-cor.test(x = orf_counts$WT_C34,y = 1/orf_counts$length,method = "pearson" )
-cor.test(x = orf_counts$PUS7_KD_C37,y = 1/orf_counts$length,method = "pearson" )
-cor.test(x = orf_counts$PUS7_KD_C34,y = 1/orf_counts$length,method = "pearson" )
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=orf_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  stat_cor(method = "pearson") +
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of counts in WT C34 sample vs 1/length",subtitle = "Points are orf counts")
+
+p6<-ggplot(orf_counts, aes(x=WT_C37, y=1/length)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=orf_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  stat_cor(method = "pearson") +
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of counts in WT C37 sample vs 1/length",subtitle = "Points are orf counts")
+
+p7<-ggplot(orf_counts, aes(x=PUS7_KD_C34, y=1/length)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=orf_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  stat_cor(method = "pearson") +
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of counts in PUS7KD C34 sample vs 1/length",subtitle = "Points are orf counts")
+
+p8<-ggplot(orf_counts, aes(x=PUS7_KD_C37, y=1/length)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  ggrepel::geom_label_repel(data=orf_counts, aes(label=name), colour="black", size=1)+
+  theme_bw()+
+  stat_cor(method = "pearson") +
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of counts in PUS7KD C37 sample vs 1/length",subtitle = "Points are orf counts")
 
 
+pdf(file=bdp("DeSeq_C34_C37/NanoCount_results.pdf"),width = 20,height = 10)
+ggarrange(p,p0)
+ggarrange(p1,p2)
+ggarrange(p3,p4)
+ggarrange(p5,p6,p7,p8,ncol = 2,nrow = 2)
+dev.off()
 
-
-###### NanoCount diff exp for WT and KD mapped to the HUMAN TRANSCRIPTOME
+###### DeSeq for HUMAN TRANSCRIPTOME (samples c34 c37)
 
 sampleC37_list <- list.files(bdp("PUS7_KD_C37/map_to_human_transcriptome/NANOCOUNT/counts"), full.names = TRUE)
 sampleC37_counts <- lapply(sampleC37_list, function(x){
   sample_name <- gsub("\\counts.tsv","C37",x)
   sample_name <- gsub(".*/","",sample_name)
   x<-read.csv(x,header = TRUE, sep = "\t") %>%
-    select(transcript_name,tpm) %>%
-    dplyr::rename(!!sample_name:=tpm) #assigns sample_name to the column named tpm
+    select(transcript_name,est_count) %>%
+    dplyr::rename(!!sample_name:=est_count) #assigns sample_name to the column named tpm
 })
 
-countData <- sampleC37_counts %>%
+sampleC34_list <- list.files(bdp("PUS7_KD/map_to_human_transcriptome/NANOCOUNT/counts"), full.names = TRUE)
+sampleC34_counts <- lapply(sampleC34_list, function(x){
+  sample_name <- gsub("\\counts.tsv","C34",x)
+  sample_name <- gsub(".*/","",sample_name)
+  x<-read.csv(x,header = TRUE, sep = "\t") %>%
+    select(transcript_name,est_count) %>%
+    dplyr::rename(!!sample_name:=est_count) 
+})
+
+sample_counts <- append(sampleC37_counts,list(sampleC34_counts[[2]]))
+sample_counts <- append(sample_counts,list(sampleC34_counts[[1]]))
+
+countData <- sample_counts %>%
   purrr::reduce(full_join, by="transcript_name")
 countData[is.na(countData)] <- 0
 countData[2:ncol(countData)] <- lapply(countData[2:ncol(countData)], as.integer)
 
-countData <- countData %>% 
-  #subset(PUS7_KD_C37>10 & WT_C37>10) %>%
-  mutate(c37fc=WT_C37/PUS7_KD_C37)%>%
-  dplyr::rename(transcript_id=transcript_name)%>%
-  separate(transcript_id,into = c("transcript_id","strand"),sep = "\\(")
+# Create metadata
+a <- c("PUS7_KD_C37","WT_C37","WT_C34","PUS7_KD_C34")
+b <- c('kd','wt','wt','kd')
+c <- c("CaCo2","CaCo2","CaCo2","CaCo2")
+metaData <- data.frame(a,b,c)
+colnames(metaData)<- c("id","dex","celltype")
 
-countData <- countData %>% 
-  left_join(gtf_tx,by='transcript_id')
+# Transform data
+# create object
+dds <- DESeqDataSetFromMatrix(countData=countData, 
+                              colData=metaData, 
+                              design=~dex, tidy = TRUE)
 
-ciao <- countData %>% 
-  dplyr::group_by(gene_name)%>%
-  summarise(WT_C37=sum(WT_C37),PUS7_KD_C37=sum(PUS7_KD_C37)) %>%
-  mutate(c37fc=WT_C37/PUS7_KD_C37) %>%
-  subset(c37fc!="NaN")
+# pre-filter of low counts
+keep <- rowSums(counts(dds)) >= 10
+dds <- dds[keep,]
 
+# Run Deseq2
+# run DESeq
+dds <- DESeq(dds)
+# display DESeq results 
+res <- results(dds)
+res
+ciao <- as.data.frame(res)
+# Save results to file
+# sort results by pvalue
+resOrdered <- res[order(res$pvalue),]
+
+# write file
+write.table(as.data.frame(resOrdered), 
+            file=bdp("DeSeq_C34_C37/human_results.csv"),quote = F,sep ='\t')
+
+# Data transformation
+# data transformation
+vsd <- varianceStabilizingTransformation(dds, blind=FALSE)
+rld <- rlog(dds, blind=FALSE)
+# calculate sample distances
+sampleDists <- dist(t(assay(vsd)))
+# set data for Sample Distance Matrix
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- paste(vsd$condition, vsd$type, sep="-")
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+# Sample Distance Matrix
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         col=colors,annotation_names_row = T)
 
 #  Volcano Plot
 par(mar=c(5,5,5,5), cex=1.0, cex.main=1.4, cex.axis=1.4, cex.lab=1.4)
-topT <- as.data.frame(ciao)
+topT <- as.data.frame(res)
+
+
+pdf(file=bdp("DeSeq_C34_C37/human.pdf"))
 
 #Adjusted P values (FDR Q values)
 with(topT, plot(log2FoldChange, -log10(padj), pch=20, main="Volcano plot", cex=1.0, xlab=bquote(~Log[2]~fold~change), ylab=bquote(~-log[10]~Q~value)))
@@ -441,6 +584,80 @@ abline(v=-2, col="black", lty=4, lwd=2.0)
 abline(v=2, col="black", lty=4, lwd=2.0)
 abline(h=-log10(max(topT$pvalue[topT$padj<0.05], na.rm=TRUE)), col="black", lty=4, lwd=2.0)
 
+# PCA
+plotPCA(vsd, intgroup=c("dex"))
+
+plotDispEsts(dds)   
+##questo plot è usato per vedeere come si distribuisce la varianza rispetto all'espressione. 
+##la relazione sottesa da DeSeq è che all'aumentare dell'espressione diminuisce la varianza 
+##(in questo caso la dispersion=varianza/media) perciò la curva fittata dev'essere un'iperbole. 
+##I punti in nero sono i punti dei nostri dati , mentre la curva rossa è quella che li fitta e 
+##i punti blu sono gli outliers per i quali il metodo statistico di Deseq decide di assegnare 
+##il valore degli estimated invece che quello del fit. Infatti normalmente Deseq approssima 
+##la varianza biologicae il rumore sotteso tramite il fit assegnando ai punti la coordinata del 
+##fit e non quella degli estimated. Perciò questa distribuzione deve avere sempre la forma di 
+##un'iperbole o significa che qualcosa è errato
+
+dev.off()
 
 
 
+################################################################################
+####################### compare tpms  ########################################
+
+# Load the data
+sampleC37_list <- list.files(bdp("PUS7_KD_C37/map_to_human_transcriptome/NANOCOUNT/counts"), full.names = TRUE)
+sampleC37_counts <- lapply(sampleC37_list, function(x){
+  sample_name <- gsub("\\counts.tsv","C37",x)
+  sample_name <- gsub(".*/","",sample_name)
+  x<-read.csv(x,header = TRUE, sep = "\t") %>%
+    select(transcript_name,tpm) %>%
+    dplyr::rename(!!sample_name:=tpm)
+})
+
+sampleC34_list <- list.files(bdp("PUS7_KD/map_to_human_transcriptome/NANOCOUNT/counts"), full.names = TRUE)
+sampleC34_counts <- lapply(sampleC34_list, function(x){
+  sample_name <- gsub("\\counts.tsv","C34",x)
+  sample_name <- gsub(".*/","",sample_name)
+  x<-read.csv(x,header = TRUE, sep = "\t") %>%
+    select(transcript_name,tpm) %>%
+    dplyr::rename(!!sample_name:=tpm)
+})
+
+
+
+sample_counts <- append(sampleC37_counts,list(sampleC34_counts[[2]]))
+sample_counts <- append(sample_counts,list(sampleC34_counts[[1]]))
+countData <- sample_counts %>%
+  purrr::reduce(full_join, by="transcript_name")
+countData[is.na(countData)] <- 0
+countData[2:ncol(countData)] <- lapply(countData[2:ncol(countData)], as.integer)
+
+countData <- countData %>% 
+  mutate(c34fc=PUS7_KD_C34/WT_C34)%>% 
+  mutate(c37fc=PUS7_KD_C37/WT_C37)%>%
+  dplyr::rename(id=transcript_name)
+
+
+countData<- countData %>%
+  separate(id,into = c("transcript_id","strand"),sep = "\\(")%>%
+  left_join(gtf_tx,by="transcript_id")
+countData<- countData %>%
+  group_by(gene_name)%>%
+  summarise(PUS7_KD_C34=sum(PUS7_KD_C34),PUS7_KD_C37=sum(PUS7_KD_C37),WT_C34=sum(WT_C34),WT_C37=sum(WT_C37))
+countData<- countData %>%
+  mutate(c34fc=PUS7_KD_C34/WT_C34)%>% 
+  mutate(c37fc=PUS7_KD_C37/WT_C37)
+#corr between FC of the two samples in orf and tx counts
+countData %>%
+  subset(c34fc!="NaN")%>%
+  subset(c37fc!="NaN")%>%
+  ggplot(., aes(x=c34fc, y=c37fc)) +
+  geom_point() +
+  theme_bw()+
+  scale_y_continuous(label=fancy_scientific)+
+  scale_x_continuous(label=fancy_scientific)+
+  ggtitle("Scatterplot of FC(PUS7kd/WT) in C34 and C37 samples")
+
+
+write_excel_csv2(x = countData,file = "/Users/camillaugolini/Desktop/human_c34_c37_fc_tpms.xls",col_names = T)

@@ -263,6 +263,7 @@ final <- bind_rows(toplot)
 final <- final %>%
   mutate(IVT = ifelse(as.integer(final$genomicPos) %in% blacklist_IVT, "IVT junction", "No junction")) %>%
   mutate(ref_id = sub("\\::.*", "",ref_id))
+
 tmp <- final
 for(i in length(tmp$ref_id)){
   bl_temp <- junc_blacklist(tmp$ref_id[i])
@@ -272,6 +273,21 @@ final <- tmp %>%
   left_join(sitelist)
 final$`Modification type`[is.na(final$`Modification type`)] <- "Others"
 
+paper_sites <- c(22322,23317,27164,28417,28759,28927,29418)
+
+final <- final %>%
+  mutate(paper = case_when(
+    genomicPos %in% paper_sites ~ "paper"
+    ))
+
+paper_sites_table <- final %>% 
+  subset(paper == "paper") %>%
+  select(genomicPos,ref_kmer,GMM_logit_pvalue,KS_dwell_pvalue,KS_intensity_pvalue,Logit_LOR,SAMPLEID,tx_cov,IVT,`Modification type`) 
+j1 <- c("GMM_logit_pvalue","KS_dwell_pvalue","KS_intensity_pvalue","Logit_LOR")
+paper_sites_table[j1] <- lapply(paper_sites_table[j1], format, digits = 4)
+
+write.table(paper_sites_table, "/Users/camillaugolini/Desktop/paper_sites.txt", sep="\t",quote = F, row.names = F, col.names = T)
+
 final_UGUAR <- final %>%
   subset(final$`Modification type`== "UGUAR")
 final_UGUAR <- assign_fragment(final_UGUAR)
@@ -280,6 +296,18 @@ final_UGUAR <- assign_fragment(final_UGUAR)
 final_UGUAR <- final_UGUAR %>%
   mutate(tx_cov=factor(tx_cov))
 final_UGUAR$fragment_ID<-factor(final_UGUAR$fragment_ID,levels=c("No_Fragment","Fragment1_5UTR","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10_3UTR"))
+
+bed_UGUAR_fragments <- final_UGUAR %>%
+  subset(fragment_ID!="No_Fragment") %>%
+  select(chr,genomicPos,fragment_ID,strand)%>%
+  mutate(genomicPos_end=(genomicPos+5),genomicPos_start=(genomicPos-5),score=0)%>%
+  mutate(fragment_ID=paste0(fragment_ID,"_",genomicPos))%>%
+  select(-genomicPos)%>%
+  relocate(chr,genomicPos_start,genomicPos_end,fragment_ID,score,strand)
+
+write.table(bed_UGUAR_fragments,"/Volumes/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_genome/pileup/regions_UGUAR_fragments.bed",sep = "\t",quote = F,row.names = F,col.names = F)
+
+
 
 p <- ggplot(final_UGUAR, aes(x=genomicPos, y=-log10(GMM_logit_pvalue), size=tx_cov, color=fragment_ID,shape=IVT)) +
       geom_point() +
