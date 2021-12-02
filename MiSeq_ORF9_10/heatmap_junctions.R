@@ -11,7 +11,7 @@ bdp <- function(relpath){
 
 bedfile <-
   read.table(
-    file = "Aligned.out.bed",
+    file = bdp("Aligned.out.bed"),
     col.names = c(
       "chr",
       "start",
