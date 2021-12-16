@@ -27,6 +27,7 @@ ddp <- function(relpath){
   return(paste0(DATADIR,"/",relpath))
 }
 
+
 # Function that returns scientific notation
 fancy_scientific <- function(l) {
   # turn in to character string in scientific notation
@@ -230,16 +231,16 @@ write.table(WT_IVT_selected_sites, rdp("PUS7_KD_WT_selected_sites.txt"), row.nam
 
 # I select the top 4 modifications and write correspondance tables 
 CCAAU_24464 <- PUS7_KD_WT_selected_sites %>% unite(ref_id,ref_id,others, sep = "::")%>% subset(genomicPos==24464)%>% select(pos,ref_id)
-write.table(CCAAU_24464,sep = "\t",quote = F,row.names = F,col.names = F,file =ndp("corresp_tx_genome_tables/CCAAU_24464.txt"))
+write.table(CCAAU_24464,sep = "\t",quote = F,row.names = F,col.names = F,file =ddp("corresp_tx_genome_tables/CCAAU_24464.txt"))
 
 UAAUA_23510 <- PUS7_KD_WT_selected_sites%>% subset(genomicPos==23510) %>% select(pos,ref_id)
-write.table(UAAUA_23510,sep = "\t",quote = F,row.names = F,col.names = F,file =ndp("corresp_tx_genome_tables/UAAUA_23510.txt"))
+write.table(UAAUA_23510,sep = "\t",quote = F,row.names = F,col.names = F,file =ddp("corresp_tx_genome_tables/UAAUA_23510.txt"))
 
 GCCAU_26337 <- PUS7_KD_WT_selected_sites %>% subset(genomicPos==26337) %>% select(pos,ref_id)
-write.table(GCCAU_26337,sep = "\t",quote = F,row.names = F,col.names = F,file =ndp("corresp_tx_genome_tables/GCCAU_26337.txt"))
+write.table(GCCAU_26337,sep = "\t",quote = F,row.names = F,col.names = F,file =ddp("corresp_tx_genome_tables/GCCAU_26337.txt"))
 
 CUUGA_28960 <- PUS7_KD_WT_selected_sites %>% subset(genomicPos==28960) %>% select(pos,ref_id)
-write.table(CUUGA_28960,sep = "\t",quote = F,row.names = F,col.names = F,file =ndp("corresp_tx_genome_tables/CUUGA_28960.txt"))
+write.table(CUUGA_28960,sep = "\t",quote = F,row.names = F,col.names = F,file =ddp("corresp_tx_genome_tables/CUUGA_28960.txt"))
 
 
 
@@ -251,7 +252,7 @@ lapply(total_split,function(x){
   if(nrow(x)>0){
     x %>% 
       {
-        ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),  color=IUPAC)) +
+        ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),  color=`Modification type`)) +
           geom_point(size=2) +
           scale_color_manual(values=c("#FF0000","#999999", "#56B4E9")) +
           {if (nrow(subset(x,-log10(GMM_logit_pvalue)>=1 & abs(Logit_LOR)>=0.5))>0) ggrepel::geom_label_repel(data=filter(., (-log10(GMM_logit_pvalue)>=1 & abs(Logit_LOR)>=0.5)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
@@ -329,7 +330,7 @@ lapply(total_split,function(x){
   if(nrow(x)>0){
     x %>% 
       {
-        ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),  color=IUPAC)) +
+        ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),  color=`Modification type`)) +
           geom_point(size=2) +
           scale_color_manual(values=c("#FF0000","#999999", "#56B4E9")) +
           {if (nrow(subset(x,-log10(GMM_logit_pvalue)>=1 & abs(Logit_LOR)>=1))>0) ggrepel::geom_label_repel(data=filter(., (-log10(GMM_logit_pvalue)>=1 & abs(Logit_LOR)>=1)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
@@ -420,7 +421,7 @@ lapply(total_split,function(x){
   if(nrow(x)>0){
     x %>% 
       {
-        ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),  color=IUPAC)) +
+        ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),  color=`Modification type`)) +
           geom_point(size=2) +
           scale_color_manual(values=c("#FF0000","#999999", "#56B4E9")) +
           {if (nrow(subset(x,-log10(GMM_logit_pvalue)>=1 & abs(Logit_LOR)>=1))>0) ggrepel::geom_label_repel(data=filter(., (-log10(GMM_logit_pvalue)>=1 & abs(Logit_LOR)>=1)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
