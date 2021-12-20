@@ -18,7 +18,7 @@ dir.create(RESULTSDIR)
 
 ########################### PARAMETERS ##########################################
 
-cell_line <- "caco2"
+cell_line <- "vero"
 LOR_thresh <- 1
 pval_thresh <- 0.01
 n_samples <- 4
@@ -127,10 +127,10 @@ tx_lengths <-read.table(bdp("analysis/recappable_assembly/two_datasets/assemblie
 fragments <- read_tsv(bdp("scripts_new/backupped_data/RAPID/fragments_genomic_coord_UCSC.txt"),col_types = "cnn")
 
 # CaCo2 DRS databases available
-WT_C37_tx <- list.files(path = ddp("PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/WT_IVT"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
-WT_C34_tx <- list.files(path = ddp("PUS7_KD/map_to_recap_assembly/NANOCOMPORE/sampcomp/WT"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
-MATTHEWS_tx <- list.files(path = ddp2("matthews_caco"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
-SRAFF_tx <- list.files(path = ddp2("sraf_caco2"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
+KIM_tx <- list.files(path = ddp2("kim"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
+DAVIDSON_tx <- list.files(path = ddp2("davidson"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
+MATTHEWS_tx <- list.files(path = ddp2("matthews_vero"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
+TAIAROA_tx <- list.files(path = ddp2("taiaroa"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
 
 
 ##################### ADDITIONAL DATAFRAME PROCESSING ##########################
@@ -191,7 +191,7 @@ canonicity <- select(assembly,start,end,id) %>%
 
 
 # Extraction of the datasets from Nanocompore data
-WT_C37_list <- lapply(WT_C37_tx, function(x) {
+KIM_list <- lapply(KIM_tx, function(x) {
   x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
     separate(cluster_counts,
              into = c("SAMPLEID", "Y", "Z"),
@@ -204,7 +204,7 @@ WT_C37_list <- lapply(WT_C37_tx, function(x) {
 })
 
 
-WT_C34_list <- lapply(WT_C34_tx, function(x) {
+DAVIDSON_list <- lapply(DAVIDSON_tx, function(x) {
   x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
     separate(cluster_counts,
              into = c("SAMPLEID", "Y", "Z"),
@@ -228,7 +228,7 @@ MATTHEWS_list <- lapply(MATTHEWS_tx, function(x) {
     mutate(ref_kmer = gsub("T", "U", ref_kmer))
 })
 
-SRAFF_list <- lapply(SRAFF_tx, function(x) {
+TAIAROA_list <- lapply(TAIAROA_tx, function(x) {
   x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
     separate(cluster_counts,
              into = c("SAMPLEID", "Y", "Z"),
@@ -242,28 +242,28 @@ SRAFF_list <- lapply(SRAFF_tx, function(x) {
 
 
 # Select columns and rename samples
-WT_C37 <- as.data.frame(bind_rows(WT_C37_list)) %>%
+KIM <- as.data.frame(bind_rows(KIM_list)) %>%
   select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="WT_C37")
+  mutate(SAMPLEID="KIM")
 
 oldnames = c("pos","genomicPos","ref_id","chr","ref_kmer","SAMPLEID")
-newnames <- colnames(WT_C37)[!(colnames(WT_C37) %in% oldnames)]
+newnames <- colnames(KIM)[!(colnames(KIM) %in% oldnames)]
 
-WT_C37 <- WT_C37 %>%
-  rename_with(~ paste0(.x, "_",unique(WT_C37$SAMPLEID)),.cols = newnames)%>%
+KIM <- KIM %>%
+  rename_with(~ paste0(.x, "_",unique(KIM$SAMPLEID)),.cols = newnames)%>%
   select(-SAMPLEID)
 
-WT_C34_list <-WT_C34_list[sapply(WT_C34_list, function(x)dim(x)[1]) > 0]    
-WT_C34 <- as.data.frame(bind_rows(WT_C34_list)) %>%
+DAVIDSON_list <-DAVIDSON_list[sapply(DAVIDSON_list, function(x)dim(x)[1]) > 0]    
+DAVIDSON <- as.data.frame(bind_rows(DAVIDSON_list)) %>%
   select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="WT_C34")%>%
-  rename_with(~ paste0(.x, "_WT_C34"),.cols = newnames)%>%
+  mutate(SAMPLEID="DAVIDSON")%>%
+  rename_with(~ paste0(.x, "_DAVIDSON"),.cols = newnames)%>%
   select(-SAMPLEID)
 
-SRAFF <- as.data.frame(bind_rows(SRAFF_list)) %>%
+TAIAROA <- as.data.frame(bind_rows(TAIAROA_list)) %>%
   select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="SRAFF")%>%
-  rename_with(~ paste0(.x, "_SRAFF"),.cols = newnames)%>%
+  mutate(SAMPLEID="TAIAROA")%>%
+  rename_with(~ paste0(.x, "_TAIAROA"),.cols = newnames)%>%
   select(-SAMPLEID)
 
 MATTHEWS <- as.data.frame(bind_rows(MATTHEWS_list)) %>%
@@ -275,8 +275,8 @@ MATTHEWS <- as.data.frame(bind_rows(MATTHEWS_list)) %>%
 
 # Join all the samples together
 oldnames<-head(oldnames,-1)
-total <- full_join(WT_C37,WT_C34, by=oldnames)
-total <- full_join(total,SRAFF, by=oldnames)
+total <- full_join(KIM,DAVIDSON, by=oldnames)
+total <- full_join(total,TAIAROA, by=oldnames)
 total <- full_join(total,MATTHEWS, by=oldnames)
 total[is.na(total)] = 0
 colindex <- grep("GMM_logit_pvalue", colnames(total),value=T)

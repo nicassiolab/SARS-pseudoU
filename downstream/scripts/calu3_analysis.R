@@ -18,11 +18,11 @@ dir.create(RESULTSDIR)
 
 ########################### PARAMETERS ##########################################
 
-cell_line <- "caco2"
+cell_line <- "calu3"
 LOR_thresh <- 1
 pval_thresh <- 0.01
-n_samples <- 4
-share_thresh <- 4
+n_samples <- 1
+share_thresh <- 1
 IVT_junc_interval_left <- 25
 IVT_junc_interval_right <- 25
 ORF_junc_interval_left <- 15
@@ -126,11 +126,8 @@ tx_lengths <-read.table(bdp("analysis/recappable_assembly/two_datasets/assemblie
   separate(V11, into=c("ex1","ex2","ex3") ,sep=",", remove=F) 
 fragments <- read_tsv(bdp("scripts_new/backupped_data/RAPID/fragments_genomic_coord_UCSC.txt"),col_types = "cnn")
 
-# CaCo2 DRS databases available
-WT_C37_tx <- list.files(path = ddp("PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/WT_IVT"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
-WT_C34_tx <- list.files(path = ddp("PUS7_KD/map_to_recap_assembly/NANOCOMPORE/sampcomp/WT"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
-MATTHEWS_tx <- list.files(path = ddp2("matthews_caco"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
-SRAFF_tx <- list.files(path = ddp2("sraf_caco2"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
+# CaLu3 DRS databases available
+SRAFF_tx <- list.files(path = ddp2("sraf_calu3"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
 
 
 ##################### ADDITIONAL DATAFRAME PROCESSING ##########################
@@ -185,49 +182,11 @@ canonicity <- select(assembly,start,end,id) %>%
   mutate(canonicity=ifelse(id=="de81ef19-655d-4ced-a9cc-cb8384001058|107","NC", canonicity)) %>%  #ORF9D
   select(-start,-end) %>%
   rename(ref_id=id)
-  
+
 
 ####################### PROCESSING OF THE DATABASES #######################
 
-
 # Extraction of the datasets from Nanocompore data
-WT_C37_list <- lapply(WT_C37_tx, function(x) {
-  x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
-    separate(cluster_counts,
-             into = c("SAMPLEID", "Y", "Z"),
-             sep = "_(?=[0-9])",
-             remove = F
-    )%>%
-    select(-Y,-Z)%>%
-    subset(SAMPLEID != "NC")%>%
-    mutate(ref_kmer = gsub("T", "U", ref_kmer))
-})
-
-
-WT_C34_list <- lapply(WT_C34_tx, function(x) {
-  x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
-    separate(cluster_counts,
-             into = c("SAMPLEID", "Y", "Z"),
-             sep = "_(?=[0-9])",
-             remove = F
-    )%>%
-    select(-Y,-Z)%>%
-    subset(SAMPLEID != "NC")%>%
-    mutate(ref_kmer = gsub("T", "U", ref_kmer))
-})
-
-MATTHEWS_list <- lapply(MATTHEWS_tx, function(x) {
-  x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
-    separate(cluster_counts,
-             into = c("SAMPLEID", "Y", "Z"),
-             sep = "_(?=[0-9])",
-             remove = F
-    )%>%
-    select(-Y,-Z)%>%
-    subset(SAMPLEID != "NC")%>%
-    mutate(ref_kmer = gsub("T", "U", ref_kmer))
-})
-
 SRAFF_list <- lapply(SRAFF_tx, function(x) {
   x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
     separate(cluster_counts,
@@ -242,42 +201,23 @@ SRAFF_list <- lapply(SRAFF_tx, function(x) {
 
 
 # Select columns and rename samples
-WT_C37 <- as.data.frame(bind_rows(WT_C37_list)) %>%
-  select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="WT_C37")
-
-oldnames = c("pos","genomicPos","ref_id","chr","ref_kmer","SAMPLEID")
-newnames <- colnames(WT_C37)[!(colnames(WT_C37) %in% oldnames)]
-
-WT_C37 <- WT_C37 %>%
-  rename_with(~ paste0(.x, "_",unique(WT_C37$SAMPLEID)),.cols = newnames)%>%
-  select(-SAMPLEID)
-
-WT_C34_list <-WT_C34_list[sapply(WT_C34_list, function(x)dim(x)[1]) > 0]    
-WT_C34 <- as.data.frame(bind_rows(WT_C34_list)) %>%
-  select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="WT_C34")%>%
-  rename_with(~ paste0(.x, "_WT_C34"),.cols = newnames)%>%
-  select(-SAMPLEID)
-
+SRAFF_list <-SRAFF_list[sapply(SRAFF_list, function(x)dim(x)[1]) > 0]    
 SRAFF <- as.data.frame(bind_rows(SRAFF_list)) %>%
   select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="SRAFF")%>%
-  rename_with(~ paste0(.x, "_SRAFF"),.cols = newnames)%>%
+  mutate(SAMPLEID="SRAFF")
+
+oldnames = c("pos","genomicPos","ref_id","chr","ref_kmer","SAMPLEID")
+newnames <- colnames(SRAFF)[!(colnames(SRAFF) %in% oldnames)]
+
+SRAFF <- SRAFF %>%
+  rename_with(~ paste0(.x, "_",unique(SRAFF$SAMPLEID)),.cols = newnames)%>%
   select(-SAMPLEID)
 
-MATTHEWS <- as.data.frame(bind_rows(MATTHEWS_list)) %>%
-  select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="MATTHEWS")%>%
-  rename_with(~ paste0(.x, "_MATTHEWS"),.cols = newnames)%>%
-  select(-SAMPLEID) 
 
 
 # Join all the samples together
 oldnames<-head(oldnames,-1)
-total <- full_join(WT_C37,WT_C34, by=oldnames)
-total <- full_join(total,SRAFF, by=oldnames)
-total <- full_join(total,MATTHEWS, by=oldnames)
+total <- SRAFF
 total[is.na(total)] = 0
 colindex <- grep("GMM_logit_pvalue", colnames(total),value=T)
 samples <- sub("GMM_logit_pvalue_", "", colindex )                              # array with the name of the samples
@@ -367,7 +307,7 @@ lapply(toplot,function(x){
     {
       ggplot(., aes(x=abs(as.numeric(final_LOR)), y=-log10(final_pvalue), size=sample_presence)) +
         geom_point() +
-        {if (nrow(subset(x,shared>=share_thresh & genomicPos<=100))>0) ggrepel::geom_label_repel(data=filter(., shared>=share_thresh) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
+        {if (nrow(subset(x,shared>=share_thresh & genomicPos<=100 ))>0) ggrepel::geom_label_repel(data=filter(., shared>=share_thresh) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
         scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
         ggtitle(unique(x$ORF), subtitle = paste0(unique(x$ref_id)," ",unique(x$canonicity))) +
         theme_bw(22)
@@ -392,4 +332,4 @@ final <- lapply(toplot,function(x){
 })
 final <- as.data.frame(bind_rows(final))
 
-write.table(final, rdp(paste0(cell_line,"_sites.txt")),sep="\t",quote=F,row.names=F,col.names=T)
+write.table(final, rdp("calu3_sites.txt"),sep="\t",quote=F,row.names=F,col.names=T)
