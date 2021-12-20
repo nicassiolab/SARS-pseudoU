@@ -125,6 +125,7 @@ tx_lengths <-read.table(bdp("analysis/recappable_assembly/two_datasets/assemblie
   separate(V11, into=c("ex1","ex2","ex3") ,sep=",", remove=F) 
 fragments <- read_tsv(bdp("scripts_new/backupped_data/RAPID/fragments_genomic_coord_UCSC.txt"),col_types = "cnn")
 
+# CaCo2 DRS databases available
 WT_C37_tx <- list.files(path = ddp("PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/WT_IVT"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
 WT_C34_tx <- list.files(path = ddp("PUS7_KD/map_to_recap_assembly/NANOCOMPORE/sampcomp/WT"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
 MATTHEWS_tx <- list.files(path = ddp2("matthews_caco"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
@@ -185,8 +186,10 @@ canonicity <- select(assembly,start,end,id) %>%
   rename(ref_id=id)
   
 
-####################### PUS7KD vs WT combined pvalue plots #######################
+####################### PROCESSING OF THE DATABASES #######################
 
+
+# Extraction of the datasets from Nanocompore data
 WT_C37_list <- lapply(WT_C37_tx, function(x) {
   x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
     separate(cluster_counts,
@@ -237,6 +240,7 @@ SRAFF_list <- lapply(SRAFF_tx, function(x) {
 })
 
 
+# Select columns and rename samples
 WT_C37 <- as.data.frame(bind_rows(WT_C37_list)) %>%
   select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
   mutate(SAMPLEID="WT_C37")
@@ -267,6 +271,8 @@ MATTHEWS <- as.data.frame(bind_rows(MATTHEWS_list)) %>%
   rename_with(~ paste0(.x, "_MATTHEWS"),.cols = newnames)%>%
   select(-SAMPLEID) 
 
+
+# Join all the samples together
 oldnames<-head(oldnames,-1)
 total <- full_join(WT_C37,WT_C34, by=oldnames)
 total <- full_join(total,SRAFF, by=oldnames)
@@ -276,19 +282,19 @@ colindex <- grep("GMM_logit_pvalue", colnames(total),value=T)
 samples <- sub("GMM_logit_pvalue_", "", colindex )                              # array with the name of the samples
 total_split <- split(total,total$ref_id)
 
-toplot <- lapply(X = total_split,FUN = function(x){
+toplot <- lapply(X = total_split,FUN = function(x){                             # loop over the transcript models
   x <- x %>% 
-    mutate(sample_presence=rowSums(select(.,starts_with("GMM_logit_pvalue"))!=0))
+    mutate(sample_presence=rowSums(select(.,starts_with("GMM_logit_pvalue"))!=0)) # count number of samples in which the site is annotated
   colindex <- grep("GMM_logit_pvalue", colnames(x),value=T)
   colindex <- sub("GMM_logit_pvalue_", "", colindex )
-  for(n in colindex){
+  for(n in colindex){                                                           # indicate for every sample using TRUE or FALSE if its LOR and pvalue are significant according to the established thresholds
     colname1<-paste0("Logit_LOR_",n)
     colname2<-paste0("GMM_logit_pvalue_",n)
     x <- x %>%
       mutate(!!n:=ifelse(!!sym(colname1)>=LOR_thresh & !!sym(colname2)<=pval_thresh,T,F))
   }
   tmp <- as.data.frame(x)%>%select(., (ncol(x)-n_samples+1):ncol(x))
-  shared <- apply(tmp, MARGIN = 1, function(x) sum(x,na.rm = TRUE))
+  shared <- apply(tmp, MARGIN = 1, function(x) sum(x,na.rm = TRUE))             # count the samples in which the site is significant
   x<-cbind(x,shared)
   x<- x%>%
     rowwise() %>%
@@ -369,7 +375,7 @@ lapply(toplot,function(x){
 dev.off()
 
 
-### WRITE TABLES
+############################# WRITE TABLES #####################################
 
 final <- lapply(toplot,function(x){
   shared_signif_mods <- nrow(subset(x,shared>=share_thresh))
