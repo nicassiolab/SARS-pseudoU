@@ -1,5 +1,3 @@
-# script to plot fisher combined transcripts fo PUS7KD and WT samples
-
 library(tidyverse)
 library(ggpubr)
 library(GGally)
@@ -27,7 +25,8 @@ IVT_junc_interval_left <- 25
 IVT_junc_interval_right <- 25
 ORF_junc_interval_left <- 15
 ORF_junc_interval_right <- 15
-burrows_sites <- c(22322,23317,27164,28417,28759,28927,29418)
+burrows_paper_notation <- c(22322,23317,27164,28417,28759,28927,29418)
+burrows_sites <- burrows_paper_notation-3
 
 ########################### FUNCTIONS ##########################################
 
@@ -41,7 +40,7 @@ rdp <- function(relpath){
   return(paste0(RESULTSDIR,"/",relpath))
 }
 
-# Function that returns full path from resultsdir
+# Function that returns full path from datadir
 ddp <- function(relpath){
   return(paste0(DATADIR,"/",relpath))
 }
@@ -404,3 +403,15 @@ final_id_all <- as.data.frame(bind_rows(final_id)) %>% subset(IVT=="No junction"
 write.table(final_id_all, rdp(paste0(cell_line,"_sites_identity.txt")),sep="\t",quote=F,row.names=F,col.names=T)
 final_id_5p <- as.data.frame(bind_rows(final_id)) %>% subset(genomicPos<=100)
 write.table(final_id_5p, rdp(paste0(cell_line,"_sites_identity_5p.txt")),sep="\t",quote=F,row.names=F,col.names=T)
+
+
+# Table with Burrows sites
+final_burrows <- lapply(toplot,function(x){
+  x <- x %>%
+    subset(burrows_presence==T)
+  return(x)
+})
+final_burrows <- as.data.frame(bind_rows(final_burrows))
+write.table(final_burrows, rdp(paste0(cell_line,"_sites_identity_burrows.txt")),sep="\t",quote=F,row.names=F,col.names=T)
+
+

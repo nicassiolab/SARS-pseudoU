@@ -1,5 +1,3 @@
-# script to plot fisher combined transcripts fo PUS7KD and WT samples
-
 library(tidyverse)
 library(ggpubr)
 library(GGally)
@@ -7,6 +5,7 @@ library(tidyr)
 library(R.utils)
 library(reshape2)
 library(rlang)
+library(dplyr)
 
 
 
@@ -14,7 +13,7 @@ ROOTDIR="/Volumes/scratch/TSSM/cugolini/cov"
 RESULTSDIR="/Volumes/scratch/FN/TL/cugolini/cov/scripts/downstream/results"
 DATADIR="/Volumes/scratch/FN/TL/cugolini/cov/analysis"
 DATADIR2="/Volumes/scratch/TSSM/cugolini/cov/analysis/7_samples_extraction/nanocompore/HUXELERATE_RESULTS/extraction/nanocompore/comparison"
-dir.create(RESULTSDIR)
+#dir.create(RESULTSDIR)
 
 ########################### PARAMETERS ##########################################
 
@@ -27,7 +26,8 @@ IVT_junc_interval_left <- 25
 IVT_junc_interval_right <- 25
 ORF_junc_interval_left <- 15
 ORF_junc_interval_right <- 15
-burrows_sites <- c(22322,23317,27164,28417,28759,28927,29418)
+burrows_paper_notation <- c(22322,23317,27164,28417,28759,28927,29418)
+burrows_sites <- burrows_paper_notation-3
 
 ########################### FUNCTIONS ##########################################
 
@@ -41,7 +41,7 @@ rdp <- function(relpath){
   return(paste0(RESULTSDIR,"/",relpath))
 }
 
-# Function that returns full path from resultsdir
+# Function that returns full path from datadir
 ddp <- function(relpath){
   return(paste0(DATADIR,"/",relpath))
 }
@@ -120,7 +120,7 @@ assign_fragment = function(df) {
 
 IVT <-read_tsv(bdp("scripts_new/backupped_data/IVT_junctions.bed"), col_names = c("chrom","start","end","id","score","strand"),col_types="cnncnc")
 assembly <-read.table(bdp("scripts_new/backupped_data/data_huxelerate_extraction/transcriptome_assembly/aln_consensus.bed"), col.names = c("chrom","start","end","id","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"), sep="\t")
-sitelist <- read_tsv(bdp("scripts_new/backupped_data/sites_blacklist.txt"),col_types="ccc") %>% rename(`Modification type`=IUPAC) 
+sitelist <- read_tsv(bdp("scripts_new/backupped_data/sites_blacklist.txt"),col_types="ccc") %>% dplyr::rename(`Modification type`=IUPAC) 
 tx <- read_tsv(bdp("analysis/recappable_assembly/two_datasets/assemblies/pinfish/consensus_extraction/orf_annotate/orf_annotate.bed"), col_names=c("chr", "start", "end", "name", "score", "strand", "cdsStart", "cdsEnd", ".", "ex", "exLen", "exSt"), col_types="cnncncnnnncc")
 tx_lengths <-read.table(bdp("analysis/recappable_assembly/two_datasets/assemblies/pinfish/aln_consensus.bed"), sep = '\t',header = FALSE) %>%
   separate(V11, into=c("ex1","ex2","ex3") ,sep=",", remove=F) 
@@ -184,7 +184,7 @@ canonicity <- select(assembly,start,end,id) %>%
   mutate(canonicity=ifelse(id=="efad7b96-ac2e-4ce1-9b83-863ffdb18eac|116","NC", canonicity)) %>%  #ORF10
   mutate(canonicity=ifelse(id=="de81ef19-655d-4ced-a9cc-cb8384001058|107","NC", canonicity)) %>%  #ORF9D
   select(-start,-end) %>%
-  rename(ref_id=id)
+  dplyr::rename(ref_id=id)
   
 
 ####################### PROCESSING OF THE DATABASES #######################
@@ -337,7 +337,7 @@ toplot<- lapply(X = toplot,FUN = function(x){
     mutate(row_max = names(.)[which.max(c_across(everything()))])%>%
     mutate(row_max=str_remove(row_max, "GMM_logit_pvalue_"))
   x<-cbind(x,tmp$row_max)%>%
-    rename(row_max=`tmp$row_max`)%>%
+    dplyr::rename(row_max=`tmp$row_max`)%>%
     mutate(row_max=sub("^", "Logit_LOR_", row_max ))
   x$final_LOR<-apply(x, 1, function(y) { y[names(y)==y[names(y)==paste0("row_max")]]})
   x <- x %>% mutate(burrows_presence=ifelse(genomicPos %in% burrows_sites,T,F))
@@ -405,5 +405,13 @@ write.table(final_id_all, rdp(paste0(cell_line,"_sites_identity.txt")),sep="\t",
 final_id_5p <- as.data.frame(bind_rows(final_id)) %>% subset(genomicPos<=100)
 write.table(final_id_5p, rdp(paste0(cell_line,"_sites_identity_5p.txt")),sep="\t",quote=F,row.names=F,col.names=T)
 
+# Table with Burrows sites
+final_burrows <- lapply(toplot,function(x){
+  x <- x %>%
+    subset(burrows_presence==T)
+  return(x)
+})
+final_burrows <- as.data.frame(bind_rows(final_burrows))
+write.table(final_burrows, rdp(paste0(cell_line,"_sites_identity_burrows.txt")),sep="\t",quote=F,row.names=F,col.names=T)
 
 
