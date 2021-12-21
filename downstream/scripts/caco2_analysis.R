@@ -377,7 +377,7 @@ dev.off()
 
 
 ############################# WRITE TABLES #####################################
-
+# Table with number of shared modifications
 final <- lapply(toplot,function(x){
   shared_signif_mods <- nrow(subset(x,shared>=share_thresh))
   shared_and_burrows<- nrow(subset(x,shared>=share_thresh & burrows_sites==T))
@@ -393,3 +393,14 @@ final <- lapply(toplot,function(x){
 final <- as.data.frame(bind_rows(final))
 
 write.table(final, rdp(paste0(cell_line,"_sites.txt")),sep="\t",quote=F,row.names=F,col.names=T)
+
+# Table with identity of shared modifications
+final_id <- lapply(toplot,function(x){
+  x <- x %>%
+    subset(shared>=share_thresh)
+  return(x)
+})
+final_id_all <- as.data.frame(bind_rows(final_id)) %>% subset(IVT=="No junction")
+write.table(final_id_all, rdp(paste0(cell_line,"_sites_identity.txt")),sep="\t",quote=F,row.names=F,col.names=T)
+final_id_5p <- as.data.frame(bind_rows(final_id)) %>% subset(genomicPos<=100)
+write.table(final_id_5p, rdp(paste0(cell_line,"_sites_identity_5p.txt")),sep="\t",quote=F,row.names=F,col.names=T)
