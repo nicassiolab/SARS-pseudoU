@@ -1,27 +1,29 @@
 library(tidyverse)
+library(dplyr)
 library(ggpubr)
 library(GGally)
 library(tidyr)
 library(R.utils)
 library(reshape2)
 library(rlang)
-library(dplyr)
+library(xlsx)
+
 
 
 
 ROOTDIR="/Volumes/scratch/TSSM/cugolini/cov"
-RESULTSDIR="/Volumes/scratch/FN/TL/cugolini/cov/scripts/downstream/results_LOR05_pval001"
+RESULTSDIR="/Volumes/scratch/FN/TL/cugolini/cov/scripts/downstream/results_allfiles_LOR05_pval001"
 DATADIR="/Volumes/scratch/FN/TL/cugolini/cov/analysis"
 DATADIR2="/Volumes/scratch/TSSM/cugolini/cov/analysis/7_samples_extraction/nanocompore/HUXELERATE_RESULTS/extraction/nanocompore/comparison"
-#dir.create(RESULTSDIR)
+dir.create(RESULTSDIR)
 
 ########################### PARAMETERS ##########################################
 
-cell_line <- "vero"
+cell_line <- "caco2"
 LOR_thresh <- 0.5
 pval_thresh <- 0.01
-n_samples <- 4
-share_thresh <- 4
+n_samples <- 1
+share_thresh <- 1
 IVT_junc_interval_left <- 25
 IVT_junc_interval_right <- 25
 ORF_junc_interval_left <- 15
@@ -126,25 +128,22 @@ tx_lengths <-read.table(bdp("analysis/recappable_assembly/two_datasets/assemblie
   separate(V11, into=c("ex1","ex2","ex3") ,sep=",", remove=F) 
 fragments <- read_tsv(bdp("scripts_new/backupped_data/RAPID/fragments_genomic_coord_UCSC.txt"),col_types = "cnn")
 
-# CaCo2 DRS databases available
-KIM_tx <- list.files(path = ddp2("kim"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
-DAVIDSON_tx <- list.files(path = ddp2("davidson"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
-MATTHEWS_tx <- list.files(path = ddp2("matthews_vero"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
-TAIAROA_tx <- list.files(path = ddp2("taiaroa"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
+# CaCo2 DRS databases have been concatenated in a single fastq and then processed with Nanocompore (WT_C34,WT_C37,MATTHEWS,SRAFF)
+caco2_tx <- list.files(path = bdp("analysis/per_cell_line/caco2/NANOCOMPORE/sampcomp"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
 
 
 ##################### ADDITIONAL DATAFRAME PROCESSING ##########################
 
 # Dataframe that returns ORFs for every transcript of the assembly
-names <- select(tx, orig=name) %>% separate(orig, into=c("id", "protein"), sep="#", remove=F) %>%
+names <- dplyr::select(tx, orig=name) %>% separate(orig, into=c("id", "protein"), sep="#", remove=F) %>%
   mutate(protein=case_when(is.na(protein)~"Unknown", T~protein)) %>%
   separate(protein, into=c("sp", "uniprot_id", "protein"), sep="\\|", remove=F) %>%
-  select(-sp) %>%
+  dplyr::select(-sp) %>%
   mutate(name=gsub("([^\\(]+).+", "\\1", protein),
          tip=as.numeric(gsub("([^\\(]+)\\(([^%]+)%/([^%]+)%\\)", "\\2", protein)),
          qip=as.numeric(gsub("([^\\(]+)\\(([^%]+)%/([^%]+)%\\)", "\\3", protein))) %>%
-  select(-protein) %>%
-  select(-orig) %>%
+  dplyr::select(-protein) %>%
+  dplyr::select(-orig) %>%
   mutate(name=case_when(is.na(name)~"Unknown", T~name))
 
 names$name[names$id == "efad7b96-ac2e-4ce1-9b83-863ffdb18eac|116::NC_045512v2:11-29873"] <- "ORF10_SARS2"   # manually add ORF9d and ORF10 
@@ -156,7 +155,7 @@ tx_lengths <- as.data.frame(tx_lengths) %>% mutate(sumrow= as.numeric(ex1)  + as
 
 # Dataframe that reports IVT junctions
 junction_sites <- IVT %>% 
-  select(start,end) %>% 
+  dplyr::select(start,end) %>% 
   unlist(use.names=FALSE) %>% 
   sort()
 blacklist_IVT <- vector()
@@ -167,7 +166,7 @@ for (i in junction_sites){
 blacklist_IVT <- blacklist_IVT[which(blacklist_IVT > 0)]
 
 # Dataframe that reports the assembly junction sites
-assembly_junction_sites <- assembly %>% select(start,end,id,blockSizes,blockStarts) %>% 
+assembly_junction_sites <- assembly %>% dplyr::select(start,end,id,blockSizes,blockStarts) %>% 
   separate(blockSizes, into = c("blSize1","blSize2","blSize3"), sep = ",") %>%
   separate(blockStarts, into = c("blStart1","blStart2","blStart3"), sep = ",") %>%
   mutate(blStart1 = (as.numeric(blStart1) + as.numeric(start))) %>%
@@ -178,12 +177,12 @@ assembly_junction_sites <- assembly %>% select(start,end,id,blockSizes,blockStar
   mutate(blEnd3 = (as.numeric(blStart3) + as.numeric(blSize3))) 
 
 # Dataframe that reports canonicity for every transcript of the assembly
-canonicity <- select(assembly,start,end,id) %>%
+canonicity <- dplyr::select(assembly,start,end,id) %>%
   mutate(canonicity=ifelse(start>100,"NC", "C")) %>%
   mutate(canonicity=ifelse(end<29000,"NC", canonicity)) %>%
   mutate(canonicity=ifelse(id=="efad7b96-ac2e-4ce1-9b83-863ffdb18eac|116","NC", canonicity)) %>%  #ORF10
   mutate(canonicity=ifelse(id=="de81ef19-655d-4ced-a9cc-cb8384001058|107","NC", canonicity)) %>%  #ORF9D
-  select(-start,-end) %>%
+  dplyr::select(-start,-end) %>%
   dplyr::rename(ref_id=id)
   
 
@@ -191,112 +190,29 @@ canonicity <- select(assembly,start,end,id) %>%
 
 
 # Extraction of the datasets from Nanocompore data
-KIM_list <- lapply(KIM_tx, function(x) {
+caco2_list <- lapply(caco2_tx, function(x) {
   x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
     separate(cluster_counts,
              into = c("SAMPLEID", "Y", "Z"),
              sep = "_(?=[0-9])",
              remove = F
     )%>%
-    select(-Y,-Z)%>%
+    dplyr::select(-Y,-Z)%>%
     subset(SAMPLEID != "NC")%>%
     mutate(ref_kmer = gsub("T", "U", ref_kmer))
 })
 
 
-DAVIDSON_list <- lapply(DAVIDSON_tx, function(x) {
-  x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
-    separate(cluster_counts,
-             into = c("SAMPLEID", "Y", "Z"),
-             sep = "_(?=[0-9])",
-             remove = F
-    )%>%
-    select(-Y,-Z)%>%
-    subset(SAMPLEID != "NC")%>%
-    mutate(ref_kmer = gsub("T", "U", ref_kmer))
-})
-
-MATTHEWS_list <- lapply(MATTHEWS_tx, function(x) {
-  x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
-    separate(cluster_counts,
-             into = c("SAMPLEID", "Y", "Z"),
-             sep = "_(?=[0-9])",
-             remove = F
-    )%>%
-    select(-Y,-Z)%>%
-    subset(SAMPLEID != "NC")%>%
-    mutate(ref_kmer = gsub("T", "U", ref_kmer))
-})
-
-TAIAROA_list <- lapply(TAIAROA_tx, function(x) {
-  x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
-    separate(cluster_counts,
-             into = c("SAMPLEID", "Y", "Z"),
-             sep = "_(?=[0-9])",
-             remove = F
-    )%>%
-    select(-Y,-Z)%>%
-    subset(SAMPLEID != "NC")%>%
-    mutate(ref_kmer = gsub("T", "U", ref_kmer))
-})
-
-
-# Select columns and rename samples
-KIM <- as.data.frame(bind_rows(KIM_list)) %>%
-  select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="KIM")
-
-oldnames = c("pos","genomicPos","ref_id","chr","ref_kmer","SAMPLEID")
-newnames <- colnames(KIM)[!(colnames(KIM) %in% oldnames)]
-
-KIM <- KIM %>%
-  rename_with(~ paste0(.x, "_",unique(KIM$SAMPLEID)),.cols = newnames)%>%
-  select(-SAMPLEID)
-
-DAVIDSON_list <-DAVIDSON_list[sapply(DAVIDSON_list, function(x)dim(x)[1]) > 0]    
-DAVIDSON <- as.data.frame(bind_rows(DAVIDSON_list)) %>%
-  select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="DAVIDSON")%>%
-  rename_with(~ paste0(.x, "_DAVIDSON"),.cols = newnames)%>%
-  select(-SAMPLEID)
-
-TAIAROA <- as.data.frame(bind_rows(TAIAROA_list)) %>%
-  select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="TAIAROA")%>%
-  rename_with(~ paste0(.x, "_TAIAROA"),.cols = newnames)%>%
-  select(-SAMPLEID)
-
-MATTHEWS <- as.data.frame(bind_rows(MATTHEWS_list)) %>%
-  select(-strand,-KS_dwell_pvalue,-KS_intensity_pvalue,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="MATTHEWS")%>%
-  rename_with(~ paste0(.x, "_MATTHEWS"),.cols = newnames)%>%
-  select(-SAMPLEID) 
-
-
-# Join all the samples together
-oldnames<-head(oldnames,-1)
-total <- full_join(KIM,DAVIDSON, by=oldnames)
-total <- full_join(total,TAIAROA, by=oldnames)
-total <- full_join(total,MATTHEWS, by=oldnames)
-total[is.na(total)] = 0
-colindex <- grep("GMM_logit_pvalue", colnames(total),value=T)
-samples <- sub("GMM_logit_pvalue_", "", colindex )                              # array with the name of the samples
-total_split <- split(total,total$ref_id)
+# select columns and rename samples
+caco2 <- as.data.frame(bind_rows(caco2_list)) %>%
+  dplyr::select(-strand,-GMM_cov_type,-GMM_n_clust)
+total_split <- split(caco2,caco2$ref_id)
 
 toplot <- lapply(X = total_split,FUN = function(x){                             # loop over the transcript models
+  x <- x %>%
+    mutate(significant=ifelse(GMM_logit_pvalue<=pval_thresh & abs(Logit_LOR)>=LOR_thresh,T,F)) # indicate for every sample using TRUE or FALSE if its LOR and pvalue are significant according to the established thresholds
   x <- x %>% 
-    mutate(sample_presence=rowSums(select(.,starts_with("GMM_logit_pvalue"))!=0)) # count number of samples in which the site is annotated
-  colindex <- grep("GMM_logit_pvalue", colnames(x),value=T)
-  colindex <- sub("GMM_logit_pvalue_", "", colindex )
-  for(n in colindex){                                                           # indicate for every sample using TRUE or FALSE if its LOR and pvalue are significant according to the established thresholds
-    colname1<-paste0("Logit_LOR_",n)
-    colname2<-paste0("GMM_logit_pvalue_",n)
-    x <- x %>%
-      mutate(!!n:=ifelse(abs(!!sym(colname1))>=LOR_thresh & !!sym(colname2)<=pval_thresh,T,F))
-  }
-  tmp <- as.data.frame(x)%>%select(., (ncol(x)-n_samples+1):ncol(x))
-  shared <- apply(tmp, MARGIN = 1, function(x) sum(x,na.rm = TRUE))             # count the samples in which the site is significant
-  x<-cbind(x,shared)
+    mutate(burrows_presence=ifelse(genomicPos %in% burrows_sites,T,F))
   x<- x%>%
     rowwise() %>%
     mutate(ORF = get_ORF(ref_id)) %>%
@@ -316,7 +232,6 @@ toplot <- lapply(X = total_split,FUN = function(x){                             
   blacklist_junctions <- junc_blacklist(unique(x$ref_id))
   x <- assign_fragment(x)
   x$fragment_ID<-factor(x$fragment_ID,levels=c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"))
-  x$sample_presence <- factor(x$sample_presence,levels=as.character(seq(from=1, to=n_samples,by=1)))
   x <- x %>% 
     mutate(IVT = ifelse(as.integer(genomicPos) %in% blacklist_junctions, "ORF junction", IVT))
   return(x)
@@ -324,34 +239,16 @@ toplot <- lapply(X = total_split,FUN = function(x){                             
 
 
 
-
-# function to select max of GMM pval between the samples and take the correspondent LOR
-toplot<- lapply(X = toplot,FUN = function(x){
-  colindex <- grep("GMM_logit_pvalue", colnames(x))
-  x<-x %>%
-    rowwise() %>%
-    mutate(final_pvalue=max(c_across(colindex)))
-  tmp <- x %>%
-    select(colindex)%>%
-    rowwise() %>%
-    mutate(row_max = names(.)[which.max(c_across(everything()))])%>%
-    mutate(row_max=str_remove(row_max, "GMM_logit_pvalue_"))
-  x<-cbind(x,tmp$row_max)%>%
-    dplyr::rename(row_max=`tmp$row_max`)%>%
-    mutate(row_max=sub("^", "Logit_LOR_", row_max ))
-  x$final_LOR<-apply(x, 1, function(y) { y[names(y)==y[names(y)==paste0("row_max")]]})
-  x <- x %>% mutate(burrows_presence=ifelse(genomicPos %in% burrows_sites,T,F))
-  return(x)
-})
+########################### PLOTS #######################################
 
 
 pdf(rdp(paste0(cell_line,"_plots_per_transcript.pdf")),height=15,width=20)
 lapply(toplot,function(x){
   print(x %>% 
     {
-      ggplot(., aes(x=abs(as.numeric(final_LOR)), y=-log10(final_pvalue), color=fragment_ID, size=sample_presence)) +
+      ggplot(., aes(x=abs(as.numeric(Logit_LOR)), y=-log10(GMM_logit_pvalue), color=fragment_ID)) +
         geom_point() +
-        {if (nrow(subset(x,shared>=share_thresh & IVT=="No junction"))>0) ggrepel::geom_label_repel(data=filter(.,(shared>=share_thresh)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
+        {if (nrow(subset(x,IVT=="No junction" & significant==T))>0) ggrepel::geom_label_repel(data=filter(.,(IVT=="No junction" & significant==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
         scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
         ggtitle(unique(x$ORF), subtitle = paste0(unique(x$ref_id)," ",unique(x$canonicity))) +
         theme_bw(22)
@@ -365,9 +262,9 @@ lapply(toplot,function(x){
   print(x %>%
     subset(genomicPos<=100)%>%
     {
-      ggplot(., aes(x=abs(as.numeric(final_LOR)), y=-log10(final_pvalue), size=sample_presence)) +
+      ggplot(., aes(x=abs(as.numeric(Logit_LOR)), y=-log10(GMM_logit_pvalue),color=fragment_ID)) +
         geom_point() +
-        {if (nrow(subset(x,shared>=share_thresh & genomicPos<=100))>0) ggrepel::geom_label_repel(data=filter(., shared>=share_thresh) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
+        {if (nrow(subset(x,IVT=="No junction"  & significant==T & genomicPos<=100))>0) ggrepel::geom_label_repel(data=filter(., IVT=="No junction"  & significant==T & genomicPos<=100) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
         scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
         ggtitle(unique(x$ORF), subtitle = paste0(unique(x$ref_id)," ",unique(x$canonicity))) +
         theme_bw(22)
@@ -378,47 +275,59 @@ dev.off()
 
 ############################# WRITE TABLES #####################################
 
-final <- lapply(toplot,function(x){
-  shared_signif_mods <- nrow(subset(x,shared>=share_thresh))
-  shared_and_burrows<- nrow(subset(x,shared>=share_thresh & burrows_sites==T))
-  tmp<- select(x,samples)
-  count_per_sample <- apply(tmp, MARGIN = 2, function(x) sum(x,na.rm=TRUE))
-  table <- as.data.frame(t(count_per_sample))
-  colnames(table)<-samples
-  table <- table %>%
-    mutate(ref_id=unique(x$ref_id),ORF=unique(x$ORF),canonicity=unique(x$canonicity))
-  table <- cbind(table, shared_signif_mods,shared_and_burrows)
-  return(table)
-})
-final <- as.data.frame(bind_rows(final))
-
-write.table(final, rdp(paste0(cell_line,"_sites.txt")),sep="\t",quote=F,row.names=F,col.names=T)
-
 # Table with identity of shared modifications
 final_id <- lapply(toplot,function(x){
   x <- x %>%
-    subset(shared>=share_thresh)
+    subset(significant==T)
   return(x)
 })
 final_id_all <- as.data.frame(bind_rows(final_id)) %>% subset(IVT=="No junction")
-write.table(final_id_all, rdp(paste0(cell_line,"_sites_identity.txt")),sep="\t",quote=F,row.names=F,col.names=T)
-final_id_5p <- as.data.frame(bind_rows(final_id)) %>% subset(genomicPos<=100)
-write.table(final_id_5p, rdp(paste0(cell_line,"_sites_identity_5p.txt")),sep="\t",quote=F,row.names=F,col.names=T)
+write.xlsx(final_id_all, rdp(paste0(cell_line,"_modified_sites.xls")),sheetName="all_significant_sites",row.names=F,col.names=T)
+
+final_id_U <- as.data.frame(bind_rows(final_id)) %>% 
+  subset(IVT=="No junction") %>% 
+  subset(substring(ref_kmer,3,3)=="U")%>%
+  subset(canonicity=="C")
+write.xlsx(final_id_U, rdp(paste0(cell_line,"_modified_sites.xls")),sheetName="all_canonical_Us_significant_sites",row.names=F,col.names=T,append=TRUE)
+
+final_id_5p <- as.data.frame(bind_rows(final_id)) %>% 
+  subset(genomicPos<=100)
+write.xlsx(final_id_5p, rdp(paste0(cell_line,"_modified_sites.xls")),sheetName="5p_significant_sites",row.names=F,col.names=T,append=TRUE)
+final_id_5p_Us <- as.data.frame(bind_rows(final_id_Us)) %>% 
+  subset(genomicPos<=100) %>%
+  subset(canonicity=="C") %>%
+  subset(substring(ref_kmer,3,3)=="U")
+write.xlsx(final_id_5p_Us, rdp(paste0(cell_line,"_modified_sites.xls")),sheetName="5p_canonical_Us_significant_sites",row.names=F,col.names=T,append=TRUE)
+
 
 # Table with Burrows sites
+
+final_burrows <- as.data.frame(bind_rows(toplot))
+write.xlsx(final_burrows, rdp(paste0(cell_line,"_modified_sites.xls")),sheetName="Burrows_redundant_ALL_sites",row.names=F,col.names=T,append=TRUE)
+
+
 final_burrows <- lapply(toplot,function(x){
   x <- x %>%
     subset(burrows_presence==T)
   return(x)
 })
 final_burrows <- as.data.frame(bind_rows(final_burrows))
-write.table(final_burrows, rdp(paste0(cell_line,"_sites_identity_burrows.txt")),sep="\t",quote=F,row.names=F,col.names=T)
+write.xlsx(final_burrows, rdp(paste0(cell_line,"_modified_sites.xls")),sheetName="Burrows_redundant_significant_sites",row.names=F,col.names=T,append=TRUE)
 
-# Table with only Burrows sites in Kim
 
-KIM <- as.data.frame(bind_rows(KIM_list)) %>%
-  select(-strand,-GMM_cov_type,-GMM_n_clust,-cluster_counts)%>%
-  mutate(SAMPLEID="KIM")
-kim_temp<- KIM %>%
-  subset(genomicPos %in% burrows_sites)
-write.table(kim_temp, rdp(paste0(cell_line,"_sites_burrows_in_kim.txt")),sep="\t",quote=F,row.names=F,col.names=T)
+final_burrows_unique<- final_burrows %>%
+  subset(significant==T)%>%
+  dplyr::select(genomicPos,ref_kmer)%>%
+  dplyr::group_by(genomicPos,ref_kmer) %>% 
+  dplyr::filter(row_number() == 1)
+write.xlsx(final_burrows, rdp(paste0(cell_line,"_modified_sites.xls")),sheetName="Burrows_non_redundant_CandNC_significant_sites",row.names=F,col.names=T,append=TRUE)
+
+final_burrows_unique<- final_burrows %>%
+  dplyr::select(genomicPos,ref_kmer)%>%
+  dplyr::group_by(genomicPos,ref_kmer) %>% 
+  dplyr::filter(row_number() == 1)
+write.xlsx(final_burrows, rdp(paste0(cell_line,"_modified_sites.xls")),sheetName="Burrows_non_redundant_CandNC_all_sites",row.names=F,col.names=T,append=TRUE)
+
+
+
+
