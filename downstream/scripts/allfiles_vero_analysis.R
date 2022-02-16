@@ -12,7 +12,7 @@ library(xlsx)
 
 ########################### PARAMETERS ##########################################
 
-cell_line <- "caco2"
+cell_line <- "vero"
 LOR_thresh <- 0.5
 pval_thresh <- 0.01
 n_samples <- 1
@@ -133,8 +133,8 @@ tx_lengths <-read.table(bdp("analysis/recappable_assembly/two_datasets/assemblie
   separate(V11, into=c("ex1","ex2","ex3") ,sep=",", remove=F) 
 fragments <- read_tsv(bdp("scripts_new/backupped_data/RAPID/fragments_genomic_coord_UCSC.txt"),col_types = "cnn")
 
-# caco2 DRS databases have been concatenated in a single fastq and then processed with Nanocompore (WT_C34,WT_C37,MATTHEWS,SRAFF)
-caco2_tx <- list.files(path = bdp("analysis/per_cell_line/caco2/NANOCOMPORE/sampcomp"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
+# vero DRS databases have been concatenated in a single fastq and then processed with Nanocompore (WT_C34,WT_C37,MATTHEWS,SRAFF)
+vero_tx <- list.files(path = bdp("analysis/per_cell_line/vero/NANOCOMPORE/sampcomp"),pattern = "*_results.tsv" , full.names = TRUE,  recursive = T)
 
 
 ##################### ADDITIONAL DATAFRAME PROCESSING ##########################
@@ -196,7 +196,7 @@ canonicity <- dplyr::select(assembly,start,end,id) %>%
 
 
 # Extraction of the datasets from Nanocompore data
-caco2_list <- lapply(caco2_tx, function(x) {
+vero_list <- lapply(vero_tx, function(x) {
   x <- read_tsv(x, col_types = "ncncccnnncncnc") %>%
     separate(cluster_counts,
              into = c("SAMPLEID", "Y", "Z"),
@@ -209,9 +209,9 @@ caco2_list <- lapply(caco2_tx, function(x) {
 })
 
 
-caco2 <- as.data.frame(bind_rows(caco2_list)) %>%                                 # select columns and rename samples
+vero <- as.data.frame(bind_rows(vero_list)) %>%                                 # select columns and rename samples
   dplyr::select(-strand,-GMM_cov_type,-GMM_n_clust)
-total_split <- split(caco2,caco2$ref_id)
+total_split <- split(vero,vero$ref_id)
 
 toplot <- lapply(X = total_split,FUN = function(x){                             # loop over the transcript models
   x <- x %>%
@@ -250,14 +250,14 @@ toplot <- lapply(X = total_split,FUN = function(x){                             
 pdf(rdp(paste0(cell_line,"_plots_per_transcript.pdf")),height=15,width=20)
 lapply(toplot,function(x){
   x %>% 
-    {
-      ggplot(., aes(x=abs(as.numeric(Logit_LOR)), y=-log10(GMM_logit_pvalue), color=fragment_ID)) +
-        geom_point() +
-        {if (nrow(subset(x,IVT=="No junction" & significant==T))>0) ggrepel::geom_label_repel(data=filter(.,(IVT=="No junction" & significant==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
-        scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
-        ggtitle(unique(x$ORF), subtitle = paste0(unique(x$ref_id)," ",unique(x$canonicity))) +
-        theme_bw(22)
-    }
+          {
+            ggplot(., aes(x=abs(as.numeric(Logit_LOR)), y=-log10(GMM_logit_pvalue), color=fragment_ID)) +
+              geom_point() +
+              {if (nrow(subset(x,IVT=="No junction" & significant==T))>0) ggrepel::geom_label_repel(data=filter(.,(IVT=="No junction" & significant==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
+              scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
+              ggtitle(unique(x$ORF), subtitle = paste0(unique(x$ref_id)," ",unique(x$canonicity))) +
+              theme_bw(22)
+          }
 })
 dev.off()
 
@@ -265,15 +265,15 @@ dev.off()
 pdf(rdp(paste0(cell_line,"_plots_per_transcript_5p.pdf")),height=15,width=20)
 lapply(toplot,function(x){
   x %>%
-    subset(genomicPos<=100)%>%
-    {
-      ggplot(., aes(x=abs(as.numeric(Logit_LOR)), y=-log10(GMM_logit_pvalue),color=fragment_ID)) +
-        geom_point() +
-        {if (nrow(subset(x,IVT=="No junction"  & significant==T & genomicPos<=100))>0) ggrepel::geom_label_repel(data=filter(., IVT=="No junction"  & significant==T & genomicPos<=100) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
-        scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
-        ggtitle(unique(x$ORF), subtitle = paste0(unique(x$ref_id)," ",unique(x$canonicity))) +
-        theme_bw(22)
-    }
+          subset(genomicPos<=100)%>%
+          {
+            ggplot(., aes(x=abs(as.numeric(Logit_LOR)), y=-log10(GMM_logit_pvalue),color=fragment_ID)) +
+              geom_point() +
+              {if (nrow(subset(x,IVT=="No junction"  & significant==T & genomicPos<=100))>0) ggrepel::geom_label_repel(data=filter(., IVT=="No junction"  & significant==T & genomicPos<=100) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5)}+
+              scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
+              ggtitle(unique(x$ORF), subtitle = paste0(unique(x$ref_id)," ",unique(x$canonicity))) +
+              theme_bw(22)
+          }
 })
 dev.off()
 
@@ -332,7 +332,7 @@ write.xlsx(final_id_5p_Us, rdp(paste0(cell_line,"_modified_sites.xls")),sheetNam
 
 ##### run peak calling script peakcalling.sh and then process the output
 
-tracks <- list.files(path = bdp("analysis/per_cell_line/caco2/NANOCOMPORE/peakcalling"),pattern = "*.bed" , full.names = TRUE,  recursive = T)
+tracks <- list.files(path = bdp("analysis/per_cell_line/vero/NANOCOMPORE/peakcalling"),pattern = "*.bed" , full.names = TRUE,  recursive = T)
 tracks <- lapply(tracks, function(x){
   x <- read.table(x,col.names = c("ref_id","genomicPos","end","chr","score","strand","pos")) %>%
     rowwise() %>%
@@ -389,7 +389,6 @@ final_burrows_unique<- final_burrows_sign %>%
   dplyr::filter(row_number() == 1)
 final_burrows_unique<-as.data.frame(final_burrows_unique)
 write.xlsx(final_burrows_unique, rdp(paste0(cell_line,"_modified_sites.xls")),sheetName="Burrows_non_redundant_CandNC_sign_sites",row.names=F,col.names=T,append=TRUE)
-
 
 
 final_burrows_unique<- final_burrows %>%
