@@ -594,7 +594,7 @@ plotDispEsts(dds)
 ##I punti in nero sono i punti dei nostri dati , mentre la curva rossa è quella che li fitta e 
 ##i punti blu sono gli outliers per i quali il metodo statistico di Deseq decide di assegnare 
 ##il valore degli estimated invece che quello del fit. Infatti normalmente Deseq approssima 
-##la varianza biologicae il rumore sotteso tramite il fit assegnando ai punti la coordinata del 
+##la varianza biologica e il rumore sotteso tramite il fit assegnando ai punti la coordinata del 
 ##fit e non quella degli estimated. Perciò questa distribuzione deve avere sempre la forma di 
 ##un'iperbole o significa che qualcosa è errato
 

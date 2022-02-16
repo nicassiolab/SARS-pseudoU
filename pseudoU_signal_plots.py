@@ -22,79 +22,148 @@ transcriptome="/hpcnfs/scratch/TSSM/cugolini/cov/analysis/recappable_assembly/tw
 											###	PUS7KD VS WT (C37)	###
 ###############################################################################################################################################################################################################################################################################
 ### UGUAR
+#rootdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT'
+#resdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT/plots/'
+#os.mkdir(resdir)
+#kmer='UGUAA'
+#s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
+
+#genmodpos=51
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+
+#with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_51.txt", "r") as a_file:
+#	for line in a_file:
+#		split_string = line.split("\t")
+#		modpos=int(split_string[0])
+#		tx=a_string = split_string[1].rstrip("\n")
+#		print(tx)
+#		p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+#		pdf.savefig(p1[0])
+#pdf.close()
+
+#genmodpos=29079
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+
+#with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_29079.txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(tx)
+#               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+#               pdf.savefig(p1[0])
+#pdf.close()
+
+#genmodpos=29808
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+
+#with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_29808.txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(tx)
+#               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+#               pdf.savefig(p1[0])
+#pdf.close()
+
+#genmodpos=29690
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+
+#with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_29690.txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(tx)
+#               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+#               pdf.savefig(p1[0])
+#pdf.close()
+
+#kmer='UGUAG'
+#genmodpos=29649
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+
+#with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_29649.txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(tx)
+#               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+#               pdf.savefig(p1[0])
+#pdf.close()
+
+
+###	NON-UGUAR MOTIFS
+
 rootdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT'
 resdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT/plots/'
 #os.mkdir(resdir)
-kmer='UGUAA'
+#kmer='CCAAU'
+#s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
+
+#genmodpos=24464
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+
+#with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/CCAAU_24464.txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(tx)
+#               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+#               pdf.savefig(p1[0])
+#pdf.close()
+
+kmer='UAAUA'
 s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
 
-genmodpos=51
-pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+genmodpos=23510
+pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'position.pdf')
 
-with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_51.txt", "r") as a_file:
-	for line in a_file:
-		split_string = line.split("\t")
-		modpos=int(split_string[0])
-		tx=a_string = split_string[1].rstrip("\n")
-		print(tx)
-		p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
-		pdf.savefig(p1[0])
-pdf.close()
-
-genmodpos=29079
-pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
-
-with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_29079.txt", "r") as a_file:
+with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UAAUA_23510.txt", "r") as a_file:
        for line in a_file:
                split_string = line.split("\t")
                modpos=int(split_string[0])
                tx=a_string = split_string[1].rstrip("\n")
                print(tx)
-               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
-               pdf.savefig(p1[0])
+               #p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+               fig, ax = s.plot_position (ref_id=tx, pos=modpos)
+               pdf.savefig(fig[0])
 pdf.close()
 
-genmodpos=29808
-pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+#kmer='GCCAU'
+#s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
 
-with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_29808.txt", "r") as a_file:
-       for line in a_file:
-               split_string = line.split("\t")
-               modpos=int(split_string[0])
-               tx=a_string = split_string[1].rstrip("\n")
-               print(tx)
-               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
-               pdf.savefig(p1[0])
-pdf.close()
+#genmodpos=26337
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
 
-genmodpos=29690
-pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+#with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/GCCAU_26337.txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(tx)
+#               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+#               pdf.savefig(p1[0])
+#pdf.close()
 
-with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_29690.txt", "r") as a_file:
-       for line in a_file:
-               split_string = line.split("\t")
-               modpos=int(split_string[0])
-               tx=a_string = split_string[1].rstrip("\n")
-               print(tx)
-               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
-               pdf.savefig(p1[0])
-pdf.close()
+#kmer='CUUGA'
+#s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
 
-kmer='UGUAG'
-genmodpos=29649
-pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
+#genmodpos=28960
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'.pdf')
 
-with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UGUAR_29649.txt", "r") as a_file:
-       for line in a_file:
-               split_string = line.split("\t")
-               modpos=int(split_string[0])
-               tx=a_string = split_string[1].rstrip("\n")
-               print(tx)
-               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
-               pdf.savefig(p1[0])
-pdf.close()
-
-
+#with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/CUUGA_28960.txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(tx)
+#               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+#               pdf.savefig(p1[0])
+#pdf.close()
 
 ###############################################################################################################################################################################################################################################################################
                                                                                         ###     PUS7KD VS IVT (C37)      ###
@@ -288,5 +357,53 @@ pdf.close()
 #pdf.savefig(p1[0])
 #pdf.close()
 
+
+###############################################################################################################################################################################################################################################################################
+                                                                                        ###       KIM VS IVT      ###
+###############################################################################################################################################################################################################################################################################
+
+
+#rootdir = '/hpcnfs/scratch/TSSM/cugolini/cov/analysis/7_samples_extraction/nanocompore/HUXELERATE_RESULTS/extraction/nanocompore/comparison/kim/'
+#resdir = '/hpcnfs/scratch/temporary/camilla_TL/5p_analysis/kim_vs_IVT/'
+#tabledir = '/hpcnfs/scratch/temporary/camilla_TL/5p_analysis/kim_vs_IVT/corresp_tables/'
+#os.mkdir(resdir)
+
+#kmer='ACUUU'
+#genmodpos=38
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+"_"+str(genmodpos)+'.pdf')
+
+#with open(tabledir+kmer+"_"+str(genmodpos)+".txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(rootdir+re.sub(":","_",re.sub("::","_",re.sub("\\|","_",tx)))+"/out_SampComp.db")
+#               s=SampCompDB(rootdir+re.sub(":","_",re.sub("::","_",re.sub("\\|","_",tx)))+"/out_SampComp.db", fasta_fn=transcriptome)
+#               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,14])
+#               pdf.savefig(p1[0])
+#pdf.close()
+
+
+
+
+#rootdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT/'
+#resdir = '/hpcnfs/scratch/temporary/camilla_TL/5p_analysis/wt_vs_pus7kd/'
+#tabledir = '/hpcnfs/scratch/temporary/camilla_TL/5p_analysis/kim_vs_IVT/corresp_tables/'
+#os.mkdir(resdir)
+
+#s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
+#kmer='ACUUU'
+#genmodpos=38
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+"_"+str(genmodpos)+'.pdf')
+
+#with open(tabledir+kmer+"_"+str(genmodpos)+".txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(tx)
+#               p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,14])
+#               pdf.savefig(p1[0])
+#pdf.close()
 
 

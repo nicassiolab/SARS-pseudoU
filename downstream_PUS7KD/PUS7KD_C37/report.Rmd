@@ -181,7 +181,6 @@ total <- bind_rows(PUS7_KD_WT) %>%
 total$IUPAC[is.na(total$IUPAC)] <- "Others"
 total_split <- split(total,total$ref_id)
 
-
 lapply(total_split,function(x){
   blacklist_junctions <- junc_blacklist(unique(x$ref_id))
   x %>% 
@@ -271,7 +270,7 @@ for(i in length(tmp$ref_id)){
 }
 final <- tmp %>%
   left_join(sitelist)
-final$`Modification type`[is.na(final$`Modification type`)] <- "Others"
+final$modif[is.na(final$modif)] <- "Others"
 
 paper_sites <- c(22322,23317,27164,28417,28759,28927,29418)
 
@@ -279,6 +278,46 @@ final <- final %>%
   mutate(paper = case_when(
     genomicPos %in% paper_sites ~ "paper"
     ))
+
+p <- ggplot(final_UGUAR, aes(x=genomicPos, y=-log10(GMM_logit_pvalue), size=tx_cov, color=fragment_ID,shape=IVT)) +
+      geom_point() +
+      scale_color_manual(breaks = c("No_Fragment","Fragment1_5UTR","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10_3UTR"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
+      scale_size_discrete(name = "N° of transcripts") +
+      scale_shape_manual(values=c(3, 16))+
+      #ggrepel::geom_label_repel(data=filter(x, -log10(GMM_logit_pvalue)>=5), aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5) +
+      ggtitle("UGUAR occurrence over all transcripts ") +
+      theme_bw(28) +
+      theme(plot.title = element_text(size = 30, face = "bold"),
+            plot.subtitle = element_text(size = 28),
+            legend.title=element_text(size=26),
+            legend.text=element_text(size=24))
+p
+
+ggsave(p,file="/Volumes/scratch/FN/TL/cugolini/cov/scripts/downstream_PUS7KD/PUS7KD_C37/UGUAR.pdf", width = 15,height = 10)
+
+
+final <- assign_fragment(final)
+final <- final %>%
+  mutate(tx_cov=factor(tx_cov)) %>%
+  mutate(IVT=factor(IVT)) %>%
+  mutate(modif=factor(modif)) 
+
+fivep <-  subset(final, as.integer(genomicPos)<100)
+p <- ggplot(fivep, aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue), size=tx_cov, color=modif, shape=IVT)) +
+      geom_point() +
+      scale_color_manual(breaks =c("Others","DRACH","UGUAR"), values=c("black","blue","deeppink")) +
+      scale_size_discrete(name = "N° of transcripts") +
+      scale_shape_manual(values=c(3, 16, 14))+
+      ggrepel::geom_label_repel(data=filter(final, -log10(GMM_logit_pvalue)>=5 & abs(Logit_LOR)>0), aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=5) +
+      ggtitle("Modifications occurrence over all transcripts  ") +
+      theme_bw(16) +
+    theme(plot.title = element_text(size = 16, face = "bold"),
+            plot.subtitle = element_text(size = 12),
+            legend.title=element_text(size=12),
+            legend.text=element_text(size=12))
+
+
+
 
 paper_sites_table <- final %>% 
   subset(paper == "paper") %>%

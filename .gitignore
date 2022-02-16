@@ -1,1 +1,4 @@
 downstream_PUS7KD/PUS7KD_C37/*.pdf
+downstream_PUS7KD/PUS7KD_C37/per_transcript_analysis/results
+downstream/results*
+.DS_Store
