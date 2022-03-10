@@ -2,6 +2,7 @@
 
 import argparse, sys, collections
 import numpy as np
+import re
 from scipy.signal import find_peaks
 
 ###############################################################################
@@ -37,14 +38,7 @@ def peakcall_nanocompore_transcript_pvalues(infile):
         gmm_pvalues, positions, gpositions, kmers, lors = filter_for_u(gmm_pvalues, positions, gpositions, kmers, lors)
         gmm_pvalues = -1*np.log10(gmm_pvalues)
         passing_gmm_pvalues = []
-        for gmm_pvalue in gmm_pvalues:
-            if gmm_pvalue >= 2:
-                passing_gmm_pvalues.append(gmm_pvalue)
-        if passing_gmm_pvalues:
-            dynamic_threshold = np.median(sorted(passing_gmm_pvalues))
-        else:
-            dynamic_threshold = 2
-        peak_idx = find_peaks(gmm_pvalues, height=dynamic_threshold, distance=9)
+        peak_idx = find_peaks(gmm_pvalues, height=2, distance=5)
 
         for idx in peak_idx[0]:
             if abs(lors[idx]) >= 0.5 and gmm_pvalues[idx] >= 2:
@@ -61,7 +55,7 @@ def filter_for_u(gmm_pvalues, positions, gpositions, kmers, lors):
     kmers_of_Us = []
     lors_of_Us = []
     for gmm, pos, gpos, kmer, lor in zip(gmm_pvalues, positions, gpositions, kmers, lors):
-        if kmer[2].upper() == 'T' or kmer[2].upper() == 'U':
+        if (re.search("U",kmer) is not None)== True  or (re.search("T",kmer) is not None)== True :
             gmm_pvalues_of_Us.append(gmm)
             positions_of_Us.append(pos)
             gpositions_of_Us.append(gpos)
