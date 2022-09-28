@@ -4,26 +4,42 @@ export LC_ALL=C
 
 source /hpcnfs/home/ieo5215/miniconda/etc/profile.d/conda.sh
 
-BASEDIR="/hpcnfs/scratch/FN/TL/cugolini/cov"
+BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
 DATA="$BASEDIR/data"
 WD="$BASEDIR/analysis"
-ENVS="/hpcnfs/home/ieo5215/miniconda/envs"
-singpore="/hpcnfs/scratch/TSSM/cugolini/tools/porechop/porechop.simg"
-singfastp="/hpcnfs/scratch/TSSM/cugolini/tools/fastp/fastp.simg"
-singtot="/hpcnfs/scratch/TSSM/cugolini/cov/img/recappable.simg"
+IMG="$BASEDIR/img"
+MOUNT_DIR="/hpcnfs/scratch/"
 GENOME_FA="/hpcnfs/scratch/TSSM/cugolini/CoV-2_analysis/reference_genome/results/edited.fa"
 TRANSCRIPTOME_ASSEMBLY="/hpcnfs/scratch/TSSM/cugolini/cov/analysis/recappable_assembly/two_datasets/assemblies/pinfish/consensus_extraction/consensus_extracted.fa"
 NEGATIVES="/hpcnfs/techunits/genomics/PublicData/TSSM/tleonardi/FAST5/20210423_1316_X3_FAL83184_52a41d7d/S33624_Calu3-CoV2-infected"
 OLIGO_ONT_ADAPT="/hpcnfs/scratch/FN/TL/cugolini/cov/data/ont_adapter/ont_adapter.fa"
 
-#### 	SCRIPT FOR THE ANALYSIS OF NEGATIVES SAMPLES
+
+# pull image
+if [ ! -f "$IMG/nrceq_pipeline_latest.sif" ]; then
+        cd $IMG
+        singularity pull docker://cugolini/nrceq_pipeline:latest
+fi
+
+# singularity command
+SINGC="singularity exec -B $MOUNT_DIR $IMG/nrceq_pipeline_latest.sif"
+
+
+
+
+
+#### analysis of negative-sense transcripts obtained by specific adapter at the genomic 5'
 
 # pycoQC
+if [ ! -f "$IMG/pycoqc_2.5.2.sif" ]; then
+        cd $IMG
+        singularity pull docker://tleonardi/pycoqc
+fi
 
-#source activate /hpcnfs/home/ieo5215/miniconda/envs/pycoQC
-#mkdir -p $WD/NEGATIVES/PYCOQC
-#pycoQC -f $NEGATIVES/sequencing_summary_FAL83184_c1102ce7.txt -o $WD/NEGATIVES/PYCOQC/sequencing_summary_NEGATIVES.html
-#conda deactivate
+
+mkdir -p $WD/negatives/pycoqc
+singularity exec -B $MOUNT_DIR $IMG/pycoqc_2.5.2.sif pycoQC -f $NEGATIVES/sequencing_summary_FAL83184_c1102ce7.txt -o $WD/negatives/pycoqc/sequencing_summary_NEGATIVES.html
+
 
 # process fastq
 
