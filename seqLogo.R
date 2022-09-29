@@ -22,7 +22,7 @@ genome_fa <-
     set.attributes = FALSE
   )[[1]]
 
-modif_sites <- c(22322,23317,27164,28417,28759,28927,29418) #modif sites takemn from the paper
+modif_sites <- c(22322,23317,27164,28417,28759,28927,29418) #modif sites taken from the paper
 modif_seq <- vector()
 for (i in modif_sites){   #extract the sequence 10 nt upstream and downstream of the modifications
   temp <- substr(genome_fa,i-10,i+10)
