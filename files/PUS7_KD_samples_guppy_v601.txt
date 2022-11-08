@@ -1,0 +1,2 @@
+Sample  Fasta_location  Fast5_location  Cell_line       Source
+DRS_CaCo2_4	/hpcnfs/scratch/temporary/camilla_FN/basecalling/cov/c37_PUS7KD/pass	/hpcnfs/scratch/temporary/camilla_FN/basecalling/cov/c37_PUS7KD/fast5	CaCo2	San Raffaele (Ugolini et al.)
