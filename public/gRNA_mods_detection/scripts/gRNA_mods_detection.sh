@@ -4,13 +4,12 @@ set -e -o pipefail
 
 BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
 DATA="$BASEDIR/data"
-ANALYSIS="$BASEDIR/analysis"
 SCRIPTDIR="/hpcnfs/scratch/FN/TL/cugolini/cov/scripts/public/gRNA_mods_detection/scripts"
 FILES="/hpcnfs/scratch/FN/TL/cugolini/cov/scripts/files"
+ALIGNMENTS="$BASEDIR/analysis/alignments"
 WD="$BASEDIR/analysis/gRNA_mods"
 IMG="$BASEDIR/img"
 MOUNT_DIR="/hpcnfs/scratch"
-REF_DATA="/hpcnfs/scratch/FN/camilla/nanopore/data"
 GENOME_FA="/hpcnfs/scratch/TSSM/cugolini/CoV-2_analysis/reference_genome/results/edited.fa"
 GENOME_PARAM="-k 8 -w 1 -ax splice -g 30000 -G 30000 -A1 -B2 -O2,24 -E1,0 -C0 -z 400,200 --no-end-flt -F 40000 -N 32 --splice-flank=no --max-chain-skip=40 -un -p 0.7"
 THREADS=10
@@ -26,12 +25,35 @@ fi
 # singularity command
 SINGC="singularity exec -B $MOUNT_DIR $IMG/nrceq_pipeline_latest.sif"
 
+# pull image for NanopolishComp
+if [ ! -f "$IMG/nanocompore_latest.sif" ]; then
+        cd $IMG
+        singularity pull docker://adrienleger/nanocompore:latest
+fi
+# singularity command
+NANOPOLISHCOMP="singularity exec -B $MOUNT_DIR $IMG/nanocompore_latest.sif"
+
+# pull image for nanocompore
+if [ ! -f "$IMG/nanocompore_v1.0.4.sif" ]; then
+        cd $IMG
+        singularity pull docker://tleonardi/nanocompore:v1.0.4
+fi
+# singularity command
+NANOCOMPORE="singularity exec -B $MOUNT_DIR $IMG/nanocompore_v1.0.4.sif"
+
+# pull image for f5c
+if [ ! -f "$IMG/f5c_v0.6.sif" ]; then
+        cd $IMG
+        singularity pull docker://tleonardi/f5c:v0.6
+fi
+# singularity command
+F5C="singularity exec -B $MOUNT_DIR $IMG/f5c_v0.6.sif"
 
 
 # indicate basecalling version (the first basecalling used in the analysis has mixed version therefore we just call it guppy_initial)
 BASECALLING="guppy_initial"
 condition="WT"
-WD="$WD/$BASECALLING"
+WD="$WD/$BASECALLING/nanocompore"
 FASTA="$FASTA/$BASECALLING"
 
 # take sample file for each condition and basecalling version
