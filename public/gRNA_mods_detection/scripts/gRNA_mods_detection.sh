@@ -27,19 +27,28 @@ fi
 SINGC="singularity exec -B $MOUNT_DIR $IMG/nrceq_pipeline_latest.sif"
 
 
-# select genomic RNAs from all the samples and merge them
-mkdir -p $TEMP_DIR/fast5
 
-while IFS=$'\t' read -r sample sample_fasta sample_fast5 cell_line source; do
+# indicate basecalling version (the first basecalling used in the analysis has mixed version therefore we just call it guppy_initial)
+BASECALLING="guppy_initial"
+condition="WT"
+WD="$WD/$BASECALLING"
+FASTA="$FASTA/$BASECALLING"
 
-	mkdir -p $WD/$cell_line
-	cat $ANALYSIS/fasta/$cell_line/"$sample".fa >> $TEMP_DIR/all_samples.fa
-	#cp $sample_fast5/*.fast5 $TEMP_DIR/fast5       # this line will be used for eventalign
+# take sample file for each condition and basecalling version
+SAMPLE_FILE="${FILES}/${condition}_samples_${BASECALLING}.txt"
 
-	awk '{if($2<=45 && $3>=29850 && $10==1) print $4}' $ANALYSIS/alignments/$cell_line/alignments_to_genome/"$sample"_sorted.bed > $WD/$cell_line/"$sample"_gRNAs.txt
-	$SINGC python3 $SCRIPTDIR/extract_reads_bam.py $ANALYSIS/alignments/$cell_line/alignments_to_genome/"$sample"_sorted.bam $WD/$cell_line/"$sample"_gRNAs.bam $WD/$cell_line/"$sample"_gRNAs.txt
+
+# select all genome-length reads from alignments
+while IFS=$'\t' read sample fasta fast5 cell_line source; do
+	cat $FASTA/$cell_line/"$condition"/"$sample".fa >> $TEMP_DIR/all_samples.fa
+        #cp $sample_fast5/*.fast5 $TEMP_DIR/fast5       # this line will be used for eventalign
+
+	mkdir -p $WD/$cell_line/"$sample"_gRNAs.txt	                
+	awk '{if($2<=45 && $3>=29850 && $10==1) print $4}' $ALIGNMENTS/$cell_line/"$condition"/alignments_to_genome/"$sample"_sorted.bed > $WD/$cell_line/"$sample"_gRNAs.txt
+	$SINGC python3 $SCRIPTDIR/extract_reads_bam.py $ALIGNMENTS/$cell_line/"$condition"/alignments_to_genome/"$sample"_sorted.bam $WD/$cell_line/"$sample"_gRNAs.bam $WD/$cell_line/"$sample"_gRNAs.txt
 	rm $WD/$cell_line/"$sample"_gRNAs.txt
-done < <(tail -n +2 $FILES/samples.txt)
+
+done < <(awk '$1!="IVT"' $SAMPLE_FILE | tail -n +2)
 
 
 mkdir -p $WD/all_cell_lines/alignments_to_genome
@@ -49,17 +58,17 @@ $SINGC samtools view -h -F 2324 -Sb $WD/all_cell_lines/alignments_to_genome/gRNA
 $SINGC samtools index $WD/all_cell_lines/alignments_to_genome/gRNAs_sorted.bam
 
 
-# eventalign reads 
+# eventalign reads
 mkdir -p $WD/all_cell_lines/eventalign/collapse
-$SINGC /f5c-v0.6/f5c_x86_64_linux index -t $THREADS --iop 5 -d $TEMP_DIR/fast5 $TEMP_DIR/all_samples.fa
-$SINGC /f5c-v0.6/f5c_x86_64_linux eventalign --rna --min-mapq 0 -t $THREADS -r $TEMP_DIR/all_samples.fa -b $WD/all_cell_lines/alignments_to_genome/gRNAs_sorted.bam --g $GENOME_FA --samples --print-read-names --scale-events --iop 5  | $SINGC NanopolishComp Eventalign_collapse -t $THREADS -o $WD/all_cell_lines/eventalign/collapse
+$F5C f5c index -t $THREADS --iop 5 -d $TEMP_DIR/fast5 $TEMP_DIR/all_samples.fa
+$F5C f5c eventalign --rna --min-mapq 0 -t $THREADS -r $TEMP_DIR/all_samples.fa -b $WD/all_cell_lines/alignments_to_genome/gRNAs_sorted.bam --g $GENOME_FA --samples --print-read-names --scale-events --iop 5  | $NANOPOLISHCOMP NanopolishComp Eventalign_collapse -t $THREADS -o $WD/all_cell_lines/eventalign/collapse
 
 
 # IVT processing
 mkdir -p $WD/IVT
-$SINGC /f5c-v0.6/f5c_x86_64_linux eventalign --rna --min-mapq 0 -t $THREADS -r $ANALYSIS/fasta/IVT/IVT.fa -b $ANALYSIS/alignments/IVT/alignments_to_genome/IVT_sorted.bam --g $GENOME_FA --samples --print-read-names --scale-events --iop 5  | $SINGC NanopolishComp Eventalign_collapse -t $THREADS -o $WD/IVT/eventalign/collapse
+$F5C f5c eventalign --rna --min-mapq 0 -t $THREADS -r $ANALYSIS/fasta/IVT/IVT.fa -b $ANALYSIS/alignments/IVT/alignments_to_genome/IVT_sorted.bam --g $GENOME_FA --samples --print-r
+ead-names --scale-events --iop 5  | $NANOPOLISHCOMP NanopolishComp Eventalign_collapse -t $THREADS -o $WD/IVT/eventalign/collapse
 
 
 # nanocompore
-$SINGC nanocompore sampcomp --file_list1 $WD/all_cell_lines/eventalign/collapse/out_eventalign_collapse.tsv --file_list2 $WD/IVT/eventalign/collapse/out_eventalign_collapse.tsv --label1 WT --label2 IVT --fasta $GENOME_FA --outpath $WD/all_cell_lines/nanocompore --overwrite --downsample_high_coverage 5000 --allow_warnings --min_coverage 30 --logit --nthreads $THREADS 
-
+$NANOCOMPORE nanocompore sampcomp --file_list1 $WD/all_cell_lines/eventalign/collapse/out_eventalign_collapse.tsv --file_list2 $WD/IVT/eventalign/collapse/out_eventalign_collapse.tsv --label1 WT --label2 IVT --fasta $GENOME_FA --outpath $WD/all_cell_lines/nanocompore --overwrite --downsample_high_coverage 5000 --allow_warnings --min_coverage 30 --logit --nthreads $THREADS
