@@ -42,21 +42,15 @@ for selected_cell_line in CaCo2 IVT VeroE6; do
 	mkdir -p $FASTA/per_cell_line/$condition
 	find $FASTA/$selected_cell_line -type f -name '*.fa' -exec cat {} \; > $FASTA/per_cell_line/$condition/"$selected_cell_line".fa
 
-	while IFS=$'\t' read sample fasta fast5 cell_line source; do
-		SAMPLE="$sample"
-		SAMPLE_FA="$fasta"
-		SAMPLE_FAST5="$fast5"
-		SAMPLE_CELL_LINE="$cell_line"
+	# align fasta to the reference transcriptome
+	mkdir -p $WD/$condition/alignments_to_assembly/alignments_backup/
+	$SINGC minimap2 -t $THREADS -ax map-ont -p 0 -N 10 $TRANSCRIPTOME_ASSEMBLY $FASTA/per_cell_line/$condition/"$selected_cell_line".fa > $WD/"$condition"/alignments_to_assembly/"$selected_cell_line".sam
+	$SINGC samtools view -h $WD/"$condition"/alignments_to_assembly/"$selected_cell_line".sam > $WD/"$condition"/alignments_to_assembly/alignments_backup/"$selected_cell_line".bam
+	$SINGC samtools view -h -F 2324 -Sb $WD/"$condition"/alignments_to_assembly/"$selected_cell_line".sam | $SINGC samtools sort > $WD/"$condition"/alignments_to_assembly/"$selected_cell_line"_nanocompore.bam
+	$SINGC samtools index $WD/"$condition"/alignments_to_assembly/"$selected_cell_line"_nanocompore.bam
+	rm $WD/"$condition"/alignments_to_assembly/"$selected_cell_line".sam
 
-                # align fasta to the reference transcriptome
-                mkdir -p $WD/$condition/alignments_to_assembly/alignments_backup/
-                $SINGC minimap2 -t $THREADS -ax map-ont -p 0 -N 10 $TRANSCRIPTOME_ASSEMBLY $FASTA/$condition/"$selected_cell_line".fa > $WD/"$condition"/alignments_to_assembly/"$selected_cell_line".sam
-                $SINGC samtools view -h $WD/"$condition"/alignments_to_assembly/"$selected_cell_line".sam > $WD/"$condition"/alignments_to_assembly/alignments_backup/"$selected_cell_line".bam
-                $SINGC samtools view -h -F 2324 -Sb $WD/"$condition"/alignments_to_assembly/"$selected_cell_line".sam | $SINGC samtools sort > $WD/"$condition"/alignments_to_assembly/"$selected_cell_line"_nanocompore.bam
-                $SINGC samtools index $WD/"$condition"/alignments_to_assembly/"$selected_cell_line"_nanocompore.bam
-                rm $WD/"$condition"/alignments_to_assembly/"$selected_cell_line".sam
-
-done < <(grep $selected_cell_line $SAMPLE_FILE)
+done
 
 
 
