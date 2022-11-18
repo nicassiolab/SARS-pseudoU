@@ -184,3 +184,25 @@ kmer_overlaps_IVT = function(kmer_pos,IVT_bed_file,left_int,right_int){
     }else{return("No_junction")}
 }
 
+# Function that lists the assembly junction sites for each transcript of the assembly
+junc_blacklist = function(transcript) {
+  corr_row <- subset(assembly_junction_sites, assembly_junction_sites$id %in% transcript)
+  blacklist_vec <- as.numeric(as.vector(corr_row[1,7:12]))
+  blacklist_vec <- blacklist_vec[!is.na(blacklist_vec)]
+  black_int <- vector()
+  for (i in blacklist_vec){
+    temp <- seq(from = i-ORF_junc_interval_left, to = i+ORF_junc_interval_right, by = 1)
+    black_int <- c(black_int,temp)
+  }
+  black_int <- black_int[which(black_int > 0)] %>% sort()
+  return(black_int)
+}
+
+# check if any of the nucleotides composing the k-mer overlaps an IVT or ORF junction
+kmer_overlaps_ORFjunc = function(kmer_pos,tx_id){
+  kmer <- seq(kmer_pos,kmer_pos+4,1)
+  if(is_empty(intersect(kmer,junc_blacklist(tx_id))) != T) {return("ORF_junction")
+    }else{return("No_junction")}
+}
+
+
