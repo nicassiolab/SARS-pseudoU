@@ -8,7 +8,7 @@ WD="$BASEDIR/analysis/basecalling/pycoQC"
 FASTA="$BASEDIR/analysis/fasta"
 IMG="$BASEDIR/img"
 FILES="/hpcnfs/scratch/FN/TL/cugolini/cov/scripts/files"
-MOUNT_DIR="/hpcnfs/scratch"
+MOUNT_DIR="/hpcnfs"
 REF_DATA="/hpcnfs/scratch/FN/camilla/nanopore/data"
 GENOME_FA="/hpcnfs/scratch/TSSM/cugolini/CoV-2_analysis/reference_genome/results/edited.fa"
 GENOME_PARAM="-k 8 -w 1 -ax splice -g 30000 -G 30000 -A1 -B2 -O2,24 -E1,0 -C0 -z 400,200 --no-end-flt -F 40000 -N 32 --splice-flank=no --max-chain-skip=40 -un -p 0.7"
@@ -24,7 +24,7 @@ SINGC="singularity exec -B $MOUNT_DIR $IMG/pycoqc_2.5.2.sif"
 
 
 # indicate basecalling version (the first basecalling used in the analysis has mixed version therefore we just call it guppy_initial)
-BASECALLING="guppy_v601"
+BASECALLING="guppy_initial"
 WD="$WD/$BASECALLING"
 
 
@@ -46,9 +46,11 @@ for condition in WT PUS7KD;do
 		# obtain guppy directory path and sequencing summary file
 		GUPPY_DIR=${SAMPLE_FAST5%/*} 
 	        SEQ_SUMMARY=$(find $GUPPY_DIR -name 'sequencing_summary*')
-
+		
 		# pycoQC quality controls
-		$SINGC  pycoQC -f $SEQ_SUMMARY -o $WD/$cell_line/"$condition"/"$sample".html
+		if [ -f "$SEQ_SUMMARY" ]; then
+			$SINGC  pycoQC -f $SEQ_SUMMARY -o $WD/$cell_line/"$condition"/"$sample".html
+		fi
 
 	done < <(tail -n +2 $SAMPLE_FILE)
 
