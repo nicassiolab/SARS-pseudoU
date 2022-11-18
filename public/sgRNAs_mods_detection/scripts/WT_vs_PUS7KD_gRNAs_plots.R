@@ -5,7 +5,7 @@ library(dplyr)
 library(xlsx)
 library(seqinr)
 
-source("functions.R")
+source(paste(dirname(getSourceEditorContext()$path),"functions.R",sep="/"))
 
 ROOTDIR="/Volumes/scratch/TSSM/cugolini/cov"
 RESULTSDIR=bdp("analysis/gRNA_mods/guppy_initial/nanocompore/downstream")
@@ -74,12 +74,12 @@ total$fragment_ID<-factor(total$fragment_ID,levels=c("No_Fragment","Fragment1_5U
 ##############################  PLOTS ##############################
 pdf(rdp("WT_vs_PUS7KD_sharkfin.pdf"),height=15,width=20)
   total %>%
-    subset(IVT=="No_junction")%>%
     {
-      ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),  color=fragment_ID)) +
+      ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),color=fragment_ID,shape=IVT)) +
         geom_point(size=2) +
         {if (nrow(subset(total,(GMM_logit_pvalue<=pval_thresh & abs(Logit_LOR)>=LOR_thresh)))>0) ggrepel::geom_label_repel(data=filter(., (GMM_logit_pvalue<=pval_thresh & abs(Logit_LOR)>=LOR_thresh & grepl("U",ref_kmer)==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=2)}+
         scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
+        scale_shape_manual(values=c(17, 16))+
         theme_bw(22) +
         geom_hline(yintercept=-log10(pval_thresh), linetype="dashed", color = "red")+
         geom_vline(xintercept=LOR_thresh, linetype="dashed", color = "red") +
