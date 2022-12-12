@@ -1,31 +1,16 @@
 #!/bin/bash
 set -e -o pipefail
-#export LC_ALL=C
 
-BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
-DATA="$BASEDIR/data"
-WD="$BASEDIR/analysis/basecalling/pycoQC"
-FASTA="$BASEDIR/analysis/fasta"
-IMG="$BASEDIR/img"
-FILES="/hpcnfs/scratch/FN/TL/cugolini/cov/scripts/files"
-MOUNT_DIR="/hpcnfs"
-REF_DATA="/hpcnfs/scratch/FN/camilla/nanopore/data"
-GENOME_FA="/hpcnfs/scratch/TSSM/cugolini/CoV-2_analysis/reference_genome/results/edited.fa"
-GENOME_PARAM="-k 8 -w 1 -ax splice -g 30000 -G 30000 -A1 -B2 -O2,24 -E1,0 -C0 -z 400,200 --no-end-flt -F 40000 -N 32 --splice-flank=no --max-chain-skip=40 -un -p 0.7"
+# load variables
+CURR_DIR=$(dirname "$(realpath "$0")")                                                  # obtain current script directory
+CONFIG=$(echo $CURR_DIR | rev | cut -d'/' -f3- |rev)                                    # obtain configuration file directory
+
+source $CONFIG/general/config.sh                                                        # load variable configuration file
+source $CURR_DIR/images.sh
+
 THREADS=10
-
-# pull image
-if [ ! -f "$IMG/pycoqc_2.5.2.sif" ]; then
-        cd $IMG
-        singularity pull docker://tleonardi/pycoqc:2.5.2
-fi
-# singularity command
-SINGC="singularity exec -B $MOUNT_DIR $IMG/pycoqc_2.5.2.sif"
-
-
-# indicate basecalling version (the first basecalling used in the analysis has mixed version therefore we just call it guppy_initial)
 BASECALLING="guppy_initial"
-WD="$WD/$BASECALLING"
+WD="$BASEDIR/analysis/basecalling/pycoQC/$BASECALLING"
 
 
 
@@ -49,7 +34,7 @@ for condition in WT PUS7KD;do
 		
 		# pycoQC quality controls
 		if [ -f "$SEQ_SUMMARY" ]; then
-			$SINGC  pycoQC -f $SEQ_SUMMARY -o $WD/$cell_line/"$condition"/"$sample".html
+			$PYCOQC pycoQC -f $SEQ_SUMMARY -o $WD/$cell_line/"$condition"/"$sample".html
 		fi
 
 	done < <(tail -n +2 $SAMPLE_FILE)
