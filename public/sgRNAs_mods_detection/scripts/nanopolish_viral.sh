@@ -1,19 +1,9 @@
 #!/bin/bash
 set -e -o pipefail
-#export LC_ALL=C
 
 BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
-DATA="$BASEDIR/data"
 WD="$BASEDIR/analysis/sgRNAs_mods_detection"
 FASTA="$BASEDIR/analysis/fasta"
-IMG="$BASEDIR/img"
-FILES="/hpcnfs/scratch/FN/TL/cugolini/cov/scripts/files"
-MOUNT_DIR="/hpcnfs/scratch"
-REF_DATA="/hpcnfs/scratch/FN/camilla/nanopore/data"
-GENOME_FA="/hpcnfs/scratch/TSSM/cugolini/CoV-2_analysis/reference_genome/results/edited.fa"
-GENOME_PARAM="-k 8 -w 1 -ax splice -g 30000 -G 30000 -A1 -B2 -O2,24 -E1,0 -C0 -z 400,200 --no-end-flt -F 40000 -N 32 --splice-flank=no --max-chain-skip=40 -un -p 0.7"
-TRANSCRIPTOME_ASSEMBLY="/hpcnfs/scratch/TSSM/cugolini/cov/analysis/recappable_assembly/two_datasets/assemblies/pinfish/consensus_extraction/consensus_extracted.fa"
-THREADS=20
 
 # pull image for nanocompore
 if [ ! -f "$IMG/nanocompore_v1.0.4.sif" ]; then
@@ -53,4 +43,35 @@ for condition in PUS7KD;do
 
 done
 
+
+
+
+
+
+# index and eventalign all the raw files from the same cell line together
+SAMPLE_FILE="${FILES}/${condition_per_cell_line}_samples_${BASECALLING}.txt"
+
+for selected_cell_line in CaCo2 VeroE6; do
+
+        # copy all the raw fast5 files for each cell line into a directory
+        mkdir -p $FAST5/$selected_cell_line
+
+        while IFS=$'\t' read sample fasta fast5 cell_line source; do
+                cp $fast5/*.fast5 $FAST5/$selected_cell_line
+        done < <(grep $selected_cell_line $SAMPLE_FILE)
+
+        # index and eventalign the files
+        $NANOCOMPORE f5c index -t $THREADS -d $FAST5/$selected_cell_line $FASTA/per_cell_line/$condition_per_cell_line/"$selected_cell_line".fa
+        $NANOCOMPORE f5c eventalign --rna --min-mapq 0 -t $THREADS -r $FASTA/per_cell_line/$condition_per_cell_line/"$selected_cell_line".fa -b $WD/"$condition_per_cell_line"/alignments_to_assembly/"$selected_cell_line"_nanocompore.bam --g $TRANSCRIPTOME_ASSEMBLY --samples --print-read-names --scale-events --iop $PARALLEL_JOBS > $WD_MODS/$selected_cell_line/nanocompore/alignments_to_assembly/eventalign/$condition_per_cell_line/events.tsv
+        $NANOPOLISHCOMP NanopolishComp Eventalign_collapse -t $THREADS -i $WD_MODS/$selected_cell_line/nanocompore/alignments_to_assembly/eventalign/$condition_per_cell_line/events.tsv -o $WD_MODS/$selected_cell_line/nanocompore/alignments_to_assembly/eventalign/$condition_per_cell_line/collapse/
+
+        # compare eventalign file for each cell line to IVT eventalign file, transcript per transcript
+        for filename in $IVT_eventalign/eventalign*; do
+                base=${filename##*/eventalign_}
+                $NANOCOMPORE nanocompore sampcomp --file_list1 $WD_MODS/$selected_cell_line/nanocompore/alignments_to_assembly/eventalign/$condition_per_cell_line/collapse/out_eventalign_collapse.tsv  --file_list2 "$filename"/out_eventalign_collapse.tsv  --label1 $condition_per_cell_line --label2 IVT --fasta $TRANSCRIPTOME_ASSEMBLY --outpath $WD_MODS/$selected_cell_line/nanocompore/alignments_to_assembly/sampcomp/"$condition_per_cell_line"_vs_IVT/"$base" --overwrite --downsample_high_coverage 5000 --allow_warnings --min_coverage 30 --logit --nthreads $THREADS --bed $NANOCOMP_BED
+
+        done
+done
+
+NANOCOMP_BED="/hpcnfs/scratch/TSSM/cugolini/cov/scripts_new/backupped_data/data_huxelerate_extraction/transcriptome_assembly/aln_consensus_name_commas.bed"
 

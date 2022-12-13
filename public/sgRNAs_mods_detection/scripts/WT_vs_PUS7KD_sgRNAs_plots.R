@@ -38,6 +38,7 @@ assembly <- read.table(bdp("scripts_new/backupped_data/data_huxelerate_extractio
 fragments <- read_tsv(bdp("scripts_new/backupped_data/RAPID/fragments_genomic_coord_UCSC.txt"),col_types = "cnn")
 fragments_bed <- fragments %>% 
   dplyr::mutate(start=(start-1),end=(end-1))
+tx <- read_tsv(bdp("analysis/recappable_assembly/two_datasets/assemblies/pinfish/consensus_extraction/orf_annotate/orf_annotate.bed"), col_names=c("chr", "start", "end", "ref_id", "score", "strand", "cdsStart", "cdsEnd", ".", "ex", "exLen", "exSt"), col_types="cnncncnnnncc")
 
 # Dataframe that reports the assembly junction sites
 assembly_junction_sites <- assembly %>% 
@@ -71,10 +72,33 @@ names$ORF[names$ref_id == "de81ef19-655d-4ced-a9cc-cb8384001058|107::NC_045512v2
 
 
 assembly <- left_join(assembly,canonicity,by="id")
-names <- names %>% select(ref_id,ORF) %>% separate(ref_id,into=c("id","others"),sep = "::",remove=T)
+names <- names %>% dplyr::select(ref_id,ORF) %>% separate(ref_id,into=c("id","others"),sep = "::",remove=T)
 assembly <- left_join(assembly,names,by="id")
 
+# mismatches dataset from pysamstats
+mismatches_WT <- read_tsv(bdp("analysis/sgRNAs_mods_detection/guppy_v601/CaCo2/pysamstats/WT_T_C_mismatches.txt"),col_names = c(
+  "chrom",
+  "genomicPos",
+  "ref_nucl",
+  "reads_all",
+  "C_reads",
+  "mism_percentage"
+),
+col_types = c('cncnnn')
+)%>%
+  mutate(genomicPos=(genomicPos-1))
 
+mismatches_PUS7KD <- read_tsv(bdp("analysis/sgRNAs_mods_detection/guppy_v601/CaCo2/pysamstats/PUS7KD_T_C_mismatches.txt"),col_names = c(
+  "chrom",
+  "genomicPos",
+  "ref_nucl",
+  "reads_all",
+  "C_reads",
+  "mism_percentage"
+),
+col_types = c('cncnnn')
+)%>%
+  mutate(genomicPos=(genomicPos-1))
 
 ##  input files that are different depending in which nucleotide the modification is
 if(which_nucl=="U"){
@@ -89,7 +113,7 @@ if(which_nucl=="U"){
 ####################### PROCESSING OF THE DATABASES ############################
 
 sgRNAs <- read_tsv(NANOCOMPORE_SGRNAS) %>%
-    select(-genomicPos,-chr, -strand)%>%
+    dplyr::select(-chr, -strand)%>%
     separate(cluster_counts,
              into = c("SAMPLEID", "Y", "Z"),
              sep = "_(?=[0-9])",
@@ -100,7 +124,6 @@ sgRNAs <- read_tsv(NANOCOMPORE_SGRNAS) %>%
     mutate(ref_kmer = gsub("T", "U", ref_kmer))
 
 total <- sgRNAs %>%
-  dplyr::rename(genomicPos=pos) %>%
   mutate(Logit_LOR=as.numeric(Logit_LOR))%>%
   left_join(sitelist, by = "ref_kmer") %>%
   mutate(modif=ifelse(is.na(modif),"Others",modif)) %>%
@@ -126,6 +149,24 @@ if(alignment_to=="assembly"){
   total_split <- split(total,total$id)
 }
 
+
+T_C_mism <- left_join(mismatches_WT,mismatches_PUS7KD,by=c("chrom","genomicPos")) %>%
+  subset(is.na(mism_percentage.y)==T) %>%
+  separate(chrom,into=c("id","others"),sep="::")
+
+total_w_mism <- lapply(total_split, function(x){
+  tx <- unique(x$id)
+  mism_per_tx <- subset(T_C_mism,id==tx)
+  x <- x %>%
+    rowwise() %>%
+    mutate(mismatch_TC=ifelse(length(intersect(seq(pos,pos+4,1),mism_per_tx))>0, T,F))
+  return(x)
+})
+
+to_print <- bind_rows(total_w_mism)
+final <- bind_rows(total_w_mism) %>%
+  subset(mismatch_TC==T)
+
 ##############################  PLOTS ##############################
 pdf(rdp("WT_vs_PUS7KD_sharkfin.pdf"),height=15,width=20)
 
@@ -134,7 +175,7 @@ lapply(total_split, function(x){
     {
       ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),color=fragment_ID,shape=IVT)) +
         geom_point(size=2) +
-        #{if (nrow(subset(x,(GMM_logit_pvalue<=pval_thresh & abs(Logit_LOR)>=LOR_thresh)))>0) ggrepel::geom_label_repel(data=filter(., (GMM_logit_pvalue<=pval_thresh & abs(Logit_LOR)>=LOR_thresh & grepl("U",ref_kmer)==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=2)}+
+        {if (nrow(subset(x,GMM_logit_pvalue<=pval_thresh))>0) ggrepel::geom_label_repel(data=dplyr::filter(., GMM_logit_pvalue<=pval_thresh) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=2)}+
         scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
         scale_shape_manual(values=c(16, 18))+
         theme_bw(22) +
@@ -146,6 +187,63 @@ lapply(total_split, function(x){
  
 dev.off()
 
+pdf(rdp("WT_vs_PUS7KD_sharkfin_no_junctions.pdf"),height=15,width=20)
+
+lapply(total_split, function(x){
+  x<- x %>%
+    subset(IVT=="No_junction")
+  if(nrow(subset(x,GMM_logit_pvalue<=pval_thresh))>0){
+    x %>%
+      {
+        ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),color=fragment_ID)) +
+          geom_point(size=2) +
+          {if (nrow(subset(x,GMM_logit_pvalue<=pval_thresh))>0) ggrepel::geom_label_repel(data=dplyr::filter(., GMM_logit_pvalue<=pval_thresh) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=2)}+
+          scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
+          #scale_shape_manual(values=c(16, 18))+
+          theme_bw(22) +
+          geom_hline(yintercept=-log10(pval_thresh), linetype="dashed", color = "red")+
+          geom_vline(xintercept=LOR_thresh, linetype="dashed", color = "red") +
+          ggtitle(label =paste0("Significant k-mers in sgRNA ",unique(x$id)), subtitle = unique(x$ORF))
+      }
+  }else{
+    x %>%
+      {
+      ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),color=fragment_ID)) +
+        geom_point(size=2) +
+        scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
+        #scale_shape_manual(values=c(16, 18))+
+        theme_bw(22) +
+        geom_hline(yintercept=-log10(pval_thresh), linetype="dashed", color = "red")+
+        geom_vline(xintercept=LOR_thresh, linetype="dashed", color = "red") +
+        ggtitle(label =paste0("Significant k-mers in sgRNA ",unique(x$id)), subtitle = unique(x$ORF))
+    }
+  }
+})
+
+dev.off()
+
+pdf(rdp("WT_vs_PUS7KD_sharkfin_only_junctions.pdf"),height=15,width=20)
+
+lapply(total_split, function(x){
+  x %>%
+    subset(IVT!="No_junction")%>%
+    {
+      ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),color=fragment_ID,shape=IVT)) +
+        geom_point(size=2) +
+        #{if (nrow(subset(x,GMM_logit_pvalue<=pval_thresh))>0) ggrepel::geom_label_repel(data=dplyr::filter(., GMM_logit_pvalue<=pval_thresh) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=2)}+
+        scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
+        scale_shape_manual(values=c(16, 18))+
+        theme_bw(22) +
+        geom_hline(yintercept=-log10(pval_thresh), linetype="dashed", color = "red")+
+        geom_vline(xintercept=LOR_thresh, linetype="dashed", color = "red") +
+        ggtitle(label =paste0("Significant k-mers in sgRNA ",unique(x$id)), subtitle = unique(x$ORF))
+    }
+})
+
+dev.off()
+
+
+
 ##############################  TABLES ##############################
-write.table(total,file=rdp("WT_vs_PUS7KD_nanocompore.tsv"),sep = "\t", quote = F, col.names = T, row.names = F)
+write.table(to_print,file=rdp("WT_vs_PUS7KD_nanocompore.tsv"),sep = "\t", quote = F, col.names = T, row.names = F)
 
