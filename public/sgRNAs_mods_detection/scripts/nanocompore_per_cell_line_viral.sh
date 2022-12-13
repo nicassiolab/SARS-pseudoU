@@ -32,7 +32,7 @@ for selected_cell_line in CaCo2 VeroE6 CaLu3; do
 	# index and eventalign files for each cell line
 	$NANOCOMPORE f5c index -d $WD/fast5_temporary/$selected_cell_line $FASTA/$condition/"$selected_cell_line".fa
 	mkdir -p $WD/$selected_cell_line/$condition/eventalign
-	$NANOCOMPORE sh -c "f5c eventalign --rna --min-mapq 0 -t $THREADS -r $FASTA/$condition/"$selected_cell_line".fa -b $WD/alignments/"$condition"/alignments_to_assembly/"$selected_cell_line"_nanocompore.bam --g $TRANSCRIPTOME_ASSEMBLY --samples --print-read-names --scale-events --disable-cuda=yes --iop 5 |  nanocompore eventalign_collapse -o $WD/$selected_cell_line/$condition/eventalign/collapse"
+	$NANOCOMPORE sh -c "f5c eventalign --rna --min-mapq 0 -t $THREADS -r $FASTA/$condition/"$selected_cell_line".fa -b $WD/alignments/"$condition"/alignments_to_assembly/"$selected_cell_line"_nanocompore.bam --g $TRANSCRIPTOME_ASSEMBLY --samples --print-read-names --scale-events --disable-cuda=yes --iop $PARALLEL_JOBS |  nanocompore eventalign_collapse -o $WD/$selected_cell_line/$condition/eventalign/collapse"
 
 	# compare eventalign files for each cell line to eventalign files for IVT, sgRNA per sgRNA
 	for filename in $IVT_eventalign/eventalign*; do
