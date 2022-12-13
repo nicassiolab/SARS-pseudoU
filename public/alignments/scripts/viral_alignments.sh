@@ -1,38 +1,22 @@
 #!/bin/bash
 set -e -o pipefail
-#export LC_ALL=C
 
-BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
-DATA="$BASEDIR/data"
-WD="$BASEDIR/analysis/alignments"
-FASTA="$BASEDIR/analysis/fasta"
-IMG="$BASEDIR/img"
-FILES="/hpcnfs/scratch/FN/TL/cugolini/cov/scripts/files"
-MOUNT_DIR="/hpcnfs/scratch"
-REF_DATA="/hpcnfs/scratch/FN/camilla/nanopore/data"
-GENOME_FA="/hpcnfs/scratch/TSSM/cugolini/CoV-2_analysis/reference_genome/results/edited.fa"
-GENOME_PARAM="-k 8 -w 1 -ax splice -g 30000 -G 30000 -A1 -B2 -O2,24 -E1,0 -C0 -z 400,200 --no-end-flt -F 40000 -N 32 --splice-flank=no --max-chain-skip=40 -un -p 0.7"
-TRANSCRIPTOME_ASSEMBLY="/hpcnfs/scratch/TSSM/cugolini/cov/analysis/recappable_assembly/two_datasets/assemblies/pinfish/consensus_extraction/consensus_extracted.fa"
-THREADS=10
+# load variables from general configuration file
+CURR_DIR=$(dirname "$(realpath "$0")")                                                  # obtain current script directory
+CONFIG=$(echo $CURR_DIR | rev | cut -d'/' -f3- |rev)                                    # obtain configuration file directory
+source $CONFIG/general/config.sh 
 
+# load local configuration file
+source $CURR_DIR/config.sh
+# load images
+source $CURR_DIR/images.sh
 
-# pull image
-if [ ! -f "$IMG/nrceq_pipeline_latest.sif" ]; then
-        cd $IMG
-        singularity pull docker://cugolini/nrceq_pipeline:latest
-fi
+# directories
+WD="$BASEDIR/analysis/alignments/$BASECALLING"
+FASTA="$BASEDIR/analysis/fasta/$BASECALLING"
 
 
-# singularity command
-SINGC="singularity exec -B $MOUNT_DIR $IMG/nrceq_pipeline_latest.sif"
-
-# indicate basecalling version (the first basecalling used in the analysis has mixed version therefore we just call it guppy_initial)
-BASECALLING="guppy_v601"
-WD="$WD/$BASECALLING"
-FASTA="$FASTA/$BASECALLING"
-
-
-for condition in WT PUS7KD;do
+for condition in $SAMPLE_CONDITION ;do
 
 	# take sample file for each condition and basecalling version
         SAMPLE_FILE="${FILES}/${condition}_samples_${BASECALLING}.txt"
@@ -45,6 +29,7 @@ for condition in WT PUS7KD;do
                 SAMPLE_FAST5="$fast5"
                 SAMPLE_CELL_LINE="$cell_line"
 		mkdir -p $FASTA/$cell_line/"$condition"/
+
 
 	        # transform fastq file into fasta file and copy to directory
 	        if [ -d $SAMPLE_FA ]; then
@@ -66,13 +51,14 @@ for condition in WT PUS7KD;do
 
 		# align fasta to the reference transcriptome
 		mkdir -p $WD/$cell_line/"$condition"/alignments_to_assembly/alignments_backup/
-		$SINGC minimap2 -t $THREADS -ax map-ont -p 0 -N 10 $TRANSCRIPTOME_ASSEMBLY $FASTA/$cell_line/"$condition"/"$sample".fa > $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample".sam
+		$SINGC minimap2 -t $THREADS $TRANSCRIPTOME_PARAM $TRANSCRIPTOME_ASSEMBLY $FASTA/$cell_line/"$condition"/"$sample".fa > $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample".sam
 		$SINGC samtools view -h $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample".sam > $WD/$cell_line/"$condition"/alignments_to_assembly/alignments_backup/"$sample".bam
 		$SINGC samtools view -h -F 2068 -Sb $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample".sam | $SINGC samtools sort > $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample"_nanocount.bam
 		$SINGC samtools view -h -F 2324 -Sb $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample".sam | $SINGC samtools sort > $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample"_nanocompore.bam
 		$SINGC samtools index $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample"_nanocount.bam
 		$SINGC samtools index $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample"_nanocompore.bam
 		rm $WD/$cell_line/"$condition"/alignments_to_assembly/"$sample".sam
+
 
 	done < <(tail -n +2 $SAMPLE_FILE)
 

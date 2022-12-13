@@ -1,44 +1,24 @@
 #!/bin/bash
 set -e -o pipefail
-#export LC_ALL=C
 
-BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
-DATA="$BASEDIR/data"
-WD="$BASEDIR/analysis/alignments"
-FASTA="$BASEDIR/analysis/fasta"
-IMG="$BASEDIR/img"
-FILES="/hpcnfs/scratch/FN/TL/cugolini/cov/scripts/files"
-MOUNT_DIR="/hpcnfs/scratch"
-REF_DATA="/hpcnfs/scratch/FN/camilla/nanopore/data"
-GENOME_FA="/hpcnfs/scratch/TSSM/cugolini/Datasets/HUMAN_REFERENCE/Homo_sapiens.GRCh38.dna_sm.toplevel.fa"
-GENOME_PARAM="-ax splice -uf -k14 -I100g"
-TRANSCRIPTOME_FA="/hpcnfs/scratch/TSSM/cugolini/Datasets/HUMAN_REFERENCE/transcriptome_fasta.fa"
-TRANSCRIPTOME_PARAM="-ax map-ont -p 0 -N 10" 
-THREADS=10
+# load variables from general configuration file
+CURR_DIR=$(dirname "$(realpath "$0")")                                                  # obtain current script directory
+CONFIG=$(echo $CURR_DIR | rev | cut -d'/' -f3- |rev)                                    # obtain configuration file directory
+source $CONFIG/general/config.sh
+
+# load local configuration file
+source $CURR_DIR/config.sh
+# load images
+source $CURR_DIR/images.sh
 
 
-# pull image
-if [ ! -f "$IMG/nrceq_pipeline_latest.sif" ]; then
-        cd $IMG
-        singularity pull docker://cugolini/nrceq_pipeline:latest
-fi
-# singularity command
-SINGC="singularity exec -B $MOUNT_DIR $IMG/nrceq_pipeline_latest.sif"
-
-# pull image of samtools 1.9 for f5c
-if [ ! -f "$IMG/samtools_1.9--76b9270.sif" ]; then
-        cd $IMG
-        singularity pull docker://nanozoo/samtools:1.9--76b9270
-fi
-SINGSAM="singularity exec -B $MOUNT_DIR $IMG/samtools_1.9--76b9270.sif"
-
-# indicate basecalling version (the first basecalling used in the analysis has mixed version therefore we just call it guppy_initial)
-BASECALLING="guppy_v601"
-WD="$WD/$BASECALLING"
-FASTA="$FASTA/$BASECALLING"
+# directories
+WD="$BASEDIR/analysis/alignments/$BASECALLING"
+FASTA="$BASEDIR/analysis/fasta/$BASECALLING"
 
 
-for condition in WT PUS7KD;do
+
+for condition in $SAMPLE_CONDITION ;do
 
 	# take sample file for each condition and basecalling version
         SAMPLE_FILE="${FILES}/${condition}_samples_${BASECALLING}.txt"
@@ -54,7 +34,7 @@ for condition in WT PUS7KD;do
 
 		# align fasta to the reference human  genome
 		mkdir -p $WD/$cell_line/"$condition"/alignments_to_human_genome/alignments_backup/
-	        $SINGC minimap2 $GENOME_PARAM -t $THREADS $GENOME_FA $FASTA/$cell_line/"$condition"/"$sample".fa > $WD/$cell_line/"$condition"/alignments_to_human_genome/"$sample".sam
+	        $SINGC minimap2 $HG_GENOME_PARAM -t $THREADS $GENOME_FA $FASTA/$cell_line/"$condition"/"$sample".fa > $WD/$cell_line/"$condition"/alignments_to_human_genome/"$sample".sam
         	$SINGC samtools view -h $WD/$cell_line/"$condition"/alignments_to_human_genome/"$sample".sam > $WD/$cell_line/"$condition"/alignments_to_human_genome/alignments_backup/"$sample".bam
         	$SINGC samtools view -F 2324 -Sb $WD/$cell_line/"$condition"/alignments_to_human_genome/alignments_backup/"$sample".bam | $SINGC samtools sort > $WD/$cell_line/"$condition"/alignments_to_human_genome/"$sample"_sorted.bam
         	rm $WD/$cell_line/"$condition"/alignments_to_human_genome/"$sample".sam
@@ -63,7 +43,7 @@ for condition in WT PUS7KD;do
 
 		# align fasta to the reference transcriptome
 		mkdir -p $WD/$cell_line/"$condition"/alignments_to_human_transcriptome/alignments_backup/
-		$SINGC minimap2 $TRANSCRIPTOME_PARAM -t $THREADS $TRANSCRIPTOME_FA $FASTA/$cell_line/"$condition"/"$sample".fa > $WD/$cell_line/"$condition"/alignments_to_human_transcriptome/"$sample".sam
+		$SINGC minimap2 $TRANSCRIPTOME_PARAM -t $THREADS $HG_DATA/transcriptome_fasta.fa $FASTA/$cell_line/"$condition"/"$sample".fa > $WD/$cell_line/"$condition"/alignments_to_human_transcriptome/"$sample".sam
 		$SINGC samtools view -h $WD/$cell_line/"$condition"/alignments_to_human_transcriptome/"$sample".sam > $WD/$cell_line/"$condition"/alignments_to_human_transcriptome/alignments_backup/"$sample".bam
 		$SINGC samtools view -F 2324 -Sb $WD/$cell_line/"$condition"/alignments_to_human_transcriptome/alignments_backup/"$sample".bam | $SINGC samtools sort > $WD/$cell_line/"$condition"/alignments_to_human_transcriptome/"$sample"_nanocompore.bam
 		$SINGC samtools view -F 2068 -Sb $WD/$cell_line/"$condition"/alignments_to_human_transcriptome/"$sample".sam |  $SINGC samtools sort > $WD/$cell_line/"$condition"/alignments_to_human_transcriptome/"$sample"_nanocount.bam

@@ -1,30 +1,21 @@
 #!/bin/bash
 
 set -eo pipefail
-export LC_ALL=C
 
-source /hpcnfs/home/ieo5215/miniconda/etc/profile.d/conda.sh
+# load variables from general configuration file
+CURR_DIR=$(dirname "$(realpath "$0")")                                                  # obtain current script directory
+CONFIG=$(echo $CURR_DIR | rev | cut -d'/' -f3- |rev)                                    # obtain configuration file directory
+source $CONFIG/general/config.sh
 
-BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
-REF_DATA="/hpcnfs/scratch/TSSM/cugolini/Datasets/HUMAN_REFERENCE"
-GENOME_FA="$REF_DATA/Homo_sapiens.GRCh38.dna_sm.toplevel.fa"
-GTF_ANNOT="$REF_DATA/Homo_sapiens.GRCh38.108.gtf"
-MOUNT_DIR="/hpcnfs/scratch"
-IMG="$BASEDIR/img"
-
-
-# pull image
-if [ ! -f "$IMG/nrceq_pipeline_latest.sif" ]; then
-        cd $IMG
-        singularity pull docker://cugolini/nrceq_pipeline:latest
-fi
+# load local configuration file
+source $CURR_DIR/config.sh
+# load images
+source $CURR_DIR/images.sh
 
 
-# singularity command
-SINGC="singularity exec -B $MOUNT_DIR $IMG/nrceq_pipeline_latest.sif"
 
-# Obtain transcriptome fasta
+# Obtain human transcriptome fasta
 
-$SINGC bedparse gtf2bed $GTF_ANNOT | awk 'BEGIN{OFS=FS="\t"}{print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12}' > $REF_DATA/Homo_sapiens.GRCh38.98.bed   #from gtf(ensemble format to BED file)
-$SINGC fastaFromBed -name -split -s -fi $GENOME_FA -bed $REF_DATA/Homo_sapiens.GRCh38.98.bed -fo - | perl -pe 's/>(.+)\(.\)$/>$1/' > $REF_DATA/transcriptome_fasta.fa      #get transcriptome fasta
+$SINGC bedparse gtf2bed $HG_GTF | awk 'BEGIN{OFS=FS="\t"}{print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12}' > $HG_BED  					 #from gtf(ensemble format to BED file)
+$SINGC fastaFromBed -name -split -s -fi $HG_GENOME_FA -bed $HG_BED -fo - | perl -pe 's/>(.+)\(.\)$/>$1/' > $HG_DATA/transcriptome_fasta.fa      	 #get transcriptome fasta
 
