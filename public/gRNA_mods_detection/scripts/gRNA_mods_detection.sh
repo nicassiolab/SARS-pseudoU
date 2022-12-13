@@ -1,13 +1,16 @@
 #!/bin/bash
 set -e -o pipefail
 
-SCRIPTDIR="$(dirname "$(realpath "$0")")"
+# load variables from general configuration file
+CURR_DIR=$(dirname "$(realpath "$0")")                                                  # obtain current script directory
+CONFIG=$(echo $CURR_DIR | rev | cut -d'/' -f3- |rev)                                    # obtain configuration file directory
+source $CONFIG/general/config.sh
 
-# load variables
-source $SCRIPTDIR/config.sh
-
+# load local configuration file
+source $CURR_DIR/config.sh
 # load images
-source $SCRIPTDIR/images.sh
+source $CURR_DIR/images.sh
+
 
 # assign working directories to a variable  
 WD="$WD/$BASECALLING/nanocompore"
@@ -50,6 +53,6 @@ $F5C f5c eventalign --rna --min-mapq 0 -t $THREADS -r $ANALYSIS/fasta/IVT/IVT.fa
 
 
 # nanocompore
-#$NANOCOMPORE nanocompore sampcomp --file_list1 $WD/all_cell_lines/eventalign/collapse/out_eventalign_collapse.tsv --file_list2 $WD/IVT/eventalign/collapse/out_eventalign_collapse.tsv --label1 WT --label2 IVT --fasta $GENOME_FA --outpath $WD/all_cell_lines/nanocompore --overwrite --downsample_high_coverage 5000 --allow_warnings --min_coverage 30 --logit --nthreads $THREADS
+$NANOCOMPORE nanocompore sampcomp --file_list1 $WD/all_cell_lines/eventalign/collapse/out_eventalign_collapse.tsv --file_list2 $WD/IVT/eventalign/collapse/out_eventalign_collapse.tsv --label1 WT --label2 IVT --fasta $GENOME_FA --outpath $WD/all_cell_lines/nanocompore --overwrite --downsample_high_coverage 5000 --allow_warnings --min_coverage 30 --logit --nthreads $THREADS
 
 

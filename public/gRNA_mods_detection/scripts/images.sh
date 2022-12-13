@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-SCRIPTDIR="$(dirname "$(realpath "$0")")"
+# load variables from general configuration file
+CURR_DIR=$(dirname "$(realpath "$0")")                                                  # obtain current script directory
+CONFIG=$(echo $CURR_DIR | rev | cut -d'/' -f3- |rev)                                    # obtain configuration file directory
+source $CONFIG/general/config.sh
 
-# load variables
-source $SCRIPTDIR/config.sh
-
+# load local configuration file
+source $CURR_DIR/config.sh
 
 # pull image
 if [ ! -f "$IMG/nrceq_pipeline_latest.sif" ]; then
