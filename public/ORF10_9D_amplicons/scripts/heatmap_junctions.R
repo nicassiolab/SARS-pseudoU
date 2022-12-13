@@ -2,13 +2,15 @@ library(tidyverse)
 library(dplyr)
 library(magic)
 
-ROOTDIR="/Volumes/scratch/FN/TL/cugolini/cov/analysis/miseq/map_to_genome"
+args = commandArgs(trailingOnly=TRUE)
+ROOTDIR=args[1]
 
 # Function the returns full path from basedir
 bdp <- function(relpath){
   return(paste0(ROOTDIR,"/",relpath))
 }
 
+# Data
 bedfile <-
   read.table(
     file = bdp("Aligned.out.bed"),
@@ -28,6 +30,7 @@ bedfile <-
     )
   )
 
+# Save bedfile entries having only two "exons"
 two_ex <- bedfile %>%
   subset(blockCount==2)%>%
   separate(blockStarts,into = c("start1","start2"),sep = ",")%>%
@@ -37,14 +40,14 @@ two_ex <- bedfile %>%
   mutate(firstblockend=as.numeric(start)+as.numeric(size1))
 
 
-#### code to build coverage bedgraph track for junction ends for canonical reads
+# build coverage bedgraph track for junction ends of canonical reads
 twoex_track_canonical <- two_ex%>%
-  subset(firstblockend>=30 & firstblockend<100)%>%
+  subset(firstblockend>=30 & firstblockend<100)%>%                              # reads having a canonical 5'UTR
   mutate(start=start2,end=(start2+1))%>%
   select(1:6)
 write.table(twoex_track_canonical, sep = "\t",quote=F,row.names = F,col.names = F, file=bdp("twoex_track_canonical.bed"))
-######################
 
+# build heatmap for amplicons start-end
 breaks <- seq(0, 30000, by = 1000)
 intervals <- data.frame(breaks,shift(breaks,i=-1))
 intervals <- head(intervals,-1)
