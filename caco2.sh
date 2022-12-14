@@ -1,8 +1,5 @@
 #!/bin/bash
 set -e -o pipefail
-#export LC_ALL=C
-
-source /hpcnfs/home/ieo5215/miniconda/etc/profile.d/conda.sh
 
 BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
 DATA="$BASEDIR/data"
