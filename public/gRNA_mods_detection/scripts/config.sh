@@ -11,7 +11,8 @@ TEMP_DIR="$TEMPORARY/gRNA_mods"
 
 
 # parameters to edit
-THREADS=5
-BASECALLING="guppy_initial"  #indicate basecalling version (the first basecalling used in the analysis has mixed version therefore we just call it guppy_initial)
-condition="WT"
+THREADS=5										# number of threads used for the scripts
+PARALLEL_JOBS=5										# number of parallel jobs to run f5c
+BASECALLING="guppy_initial"								# indicate basecalling version (since the initial basecalling for the different datasets has been performed with different versions of guppy, we just call it "guppy_initial")
+condition="WT"										# condition of the samples to be processed
 

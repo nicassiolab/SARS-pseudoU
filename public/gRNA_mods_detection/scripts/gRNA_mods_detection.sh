@@ -43,13 +43,13 @@ $SINGC samtools index $WD/all_cell_lines/alignments_to_genome/gRNAs_sorted.bam
 
 # eventalign reads
 mkdir -p $WD/all_cell_lines/eventalign/collapse
-$F5C f5c index -t $THREADS --iop 5 -d $TEMP_DIR/fast5 $TEMP_DIR/all_samples.fa
+$F5C f5c index -t $THREADS --iop $PARALLEL_JOBS -d $TEMP_DIR/fast5 $TEMP_DIR/all_samples.fa
 $F5C f5c eventalign --rna --min-mapq 0 -t $THREADS -r $TEMP_DIR/all_samples.fa -b $WD/all_cell_lines/alignments_to_genome/gRNAs_sorted.bam --g $GENOME_FA --samples --print-read-names --scale-events --iop 5  | $NANOPOLISHCOMP NanopolishComp Eventalign_collapse -t $THREADS -o $WD/all_cell_lines/eventalign/collapse
 
 
 # IVT processing
 mkdir -p $WD/IVT
-$F5C f5c eventalign --rna --min-mapq 0 -t $THREADS -r $ANALYSIS/fasta/IVT/IVT.fa -b $ANALYSIS/alignments/IVT/alignments_to_genome/IVT_sorted.bam --g $GENOME_FA --samples --print-read-names --scale-events --iop 5  | $NANOPOLISHCOMP NanopolishComp Eventalign_collapse -t $THREADS -o $WD/IVT/eventalign/collapse
+$F5C f5c eventalign --rna --min-mapq 0 -t $THREADS -r $ANALYSIS/fasta/IVT/IVT.fa -b $ANALYSIS/alignments/IVT/alignments_to_genome/IVT_sorted.bam --g $GENOME_FA --samples --print-read-names --scale-events --iop $PARALLEL_JOBS  | $NANOPOLISHCOMP NanopolishComp Eventalign_collapse -t $THREADS -o $WD/IVT/eventalign/collapse
 
 
 # nanocompore
