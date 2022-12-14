@@ -9,15 +9,17 @@ source $CONFIG/general/config.sh
 # load local configuration file
 source $CURR_DIR/config.sh
 
+
+
 # pull image
 if [ ! -f "$IMG/nrceq_pipeline_latest.sif" ]; then
         cd $IMG
         singularity pull docker://cugolini/nrceq_pipeline:latest
 fi
-
-
 # singularity command
 SINGC="singularity exec -B $MOUNT_DIR $IMG/nrceq_pipeline_latest.sif"
+
+
 
 # pull image for nanocompore
 if [ ! -f "$IMG/nanocompore_v1.0.4.sif" ]; then

@@ -11,6 +11,7 @@ source $CURR_DIR/config.sh
 # load images
 source $CURR_DIR/images.sh
 
+# directories
 WD="$BASEDIR/analysis/alignments/$BASECALLING/per_cell_line"
 WD_MODS="$BASEDIR/analysis/sgRNAs_mods_detection/$BASECALLING/per_cell_line"
 FASTA="$BASEDIR/analysis/fasta/$BASECALLING"
@@ -27,7 +28,7 @@ for selected_cell_line in CaCo2 CaLu3 VeroE6; do
 
 	# align fasta to the reference transcriptome
 	mkdir -p $WD/$condition_per_cell_line/alignments_to_assembly/alignments_backup/
-	$SINGC minimap2 -t $THREADS -ax map-ont -p 0 -N 10 $TRANSCRIPTOME_ASSEMBLY $FASTA/per_cell_line/$condition_per_cell_line/"$selected_cell_line".fa > $WD/"$condition_per_cell_line"/alignments_to_assembly/"$selected_cell_line".sam
+	$SINGC minimap2 -t $THREADS $TRANSCRIPTOME_PARAM $TRANSCRIPTOME_ASSEMBLY $FASTA/per_cell_line/$condition_per_cell_line/"$selected_cell_line".fa > $WD/"$condition_per_cell_line"/alignments_to_assembly/"$selected_cell_line".sam
 	$SINGC samtools view -h $WD/"$condition_per_cell_line"/alignments_to_assembly/"$selected_cell_line".sam > $WD/"$condition_per_cell_line"/alignments_to_assembly/alignments_backup/"$selected_cell_line".bam
 	$SINGC samtools view -h -F 2324 -Sb $WD/"$condition_per_cell_line"/alignments_to_assembly/"$selected_cell_line".sam | $SINGC samtools sort > $WD/"$condition_per_cell_line"/alignments_to_assembly/"$selected_cell_line"_nanocompore.bam
 	$SINGC samtools index $WD/"$condition_per_cell_line"/alignments_to_assembly/"$selected_cell_line"_nanocompore.bam

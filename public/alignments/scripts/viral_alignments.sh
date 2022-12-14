@@ -16,6 +16,7 @@ WD="$BASEDIR/analysis/alignments/$BASECALLING"
 FASTA="$BASEDIR/analysis/fasta/$BASECALLING"
 
 
+
 for condition in $SAMPLE_CONDITION ;do
 
 	# take sample file for each condition and basecalling version
