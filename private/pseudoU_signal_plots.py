@@ -97,8 +97,8 @@ transcriptome="/hpcnfs/scratch/TSSM/cugolini/cov/analysis/recappable_assembly/tw
 
 ###	NON-UGUAR MOTIFS
 
-rootdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT'
-resdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT/plots/'
+#rootdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT'
+#resdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/PUS7_KD_WT/plots/'
 #os.mkdir(resdir)
 #kmer='CCAAU'
 #s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
@@ -116,22 +116,22 @@ resdir = '/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_a
 #               pdf.savefig(p1[0])
 #pdf.close()
 
-kmer='UAAUA'
-s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
+#kmer='UAAUA'
+#s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
 
-genmodpos=23510
-pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'position.pdf')
+#genmodpos=23510
+#pdf = matplotlib.backends.backend_pdf.PdfPages(resdir+kmer+'_'+str(genmodpos)+'position.pdf')
 
-with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UAAUA_23510.txt", "r") as a_file:
-       for line in a_file:
-               split_string = line.split("\t")
-               modpos=int(split_string[0])
-               tx=a_string = split_string[1].rstrip("\n")
-               print(tx)
-               #p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
-               fig, ax = s.plot_position (ref_id=tx, pos=modpos)
-               pdf.savefig(fig[0])
-pdf.close()
+#with open("/hpcnfs/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp/corresp_tx_genome_tables/UAAUA_23510.txt", "r") as a_file:
+#       for line in a_file:
+#               split_string = line.split("\t")
+#               modpos=int(split_string[0])
+#               tx=a_string = split_string[1].rstrip("\n")
+#               print(tx)
+#               #p1 = s.plot_signal(ref_id=tx, start=(modpos-10), end=(modpos+10), plot_style='seaborn-whitegrid', figsize=[18,9])
+#               fig, ax = s.plot_position (ref_id=tx, pos=modpos)
+#               pdf.savefig(fig[0])
+#pdf.close()
 
 #kmer='GCCAU'
 #s=SampCompDB(rootdir+"/outSampComp.db", fasta_fn=transcriptome)
