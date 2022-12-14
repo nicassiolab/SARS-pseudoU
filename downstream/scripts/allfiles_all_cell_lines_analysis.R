@@ -4,11 +4,11 @@ library(R.utils)
 library(reshape2)
 library(rlang)
 library(stringr)
-library(plyr)
 library(dplyr)
 library(xlsx)
 library(seqinr)
 library(ggpubr)
+library(DescTools)
 
 
 
@@ -21,10 +21,19 @@ dir.create(paste0(RESULTSDIR,"/shared/corresp_tables"),showWarnings = F)
 dir.create(paste0(RESULTSDIR,"/shared/tracks_for_overlap"),showWarnings = F)
 
 
-########################### PARAMETERS ##########################################
+########################### PARAMETERS #########################################
 
 `%!in%` <- Negate(`%in%`)
+LOR_thresh <- 0.5
+pval_thresh <- 0.01
+n_samples <- 1
+IVT_junc_interval_left <- 25
+IVT_junc_interval_right <- 25
+ORF_junc_interval_left <- 15
+ORF_junc_interval_right <- 15
 fleming_paper_notation <- c(22322,23317,27164,28417,28759,28927,29418)
+fleming_sites_bed <- fleming_paper_notation-3
+which_nucl <- "U"                                                               # possibilities are U or A
 
 
 ########################### FUNCTIONS ##########################################
@@ -43,7 +52,6 @@ rdp <- function(relpath){
 ddp <- function(relpath){
   return(paste0(DATADIR,"/",relpath))
 }
-
 ddp2 <- function(relpath){
   return(paste0(DATADIR2,"/",relpath))
 }
@@ -51,13 +59,38 @@ ddp2 <- function(relpath){
 vlab <- theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))
 
 # Function to get the PTM motif in a sequence
-get_motif = function(seq_to_search) {
-  motifs <- sapply(as.vector(sitelist$ref_kmer), function(x){
-    x <-str_extract_all(seq_to_search,x)
-  })
-  motifs <-toString(unlist(motifs,use.names = F))
-  return(motifs)
+if(which_nucl=="U"){
+  get_motif = function(left_int,right_int){
+    motifs <- vector()
+    for(i in 1:nrow(sitelist)){
+      if(sitelist[i,"motif"]=="UA"){
+        seq_to_search <- gsub("T","U",toupper(substr(viral_genome,left_int,right_int)))
+        element <- unlist(str_extract_all(seq_to_search,as.character(sitelist[i,"ref_kmer"])))
+        if(is_empty(element)==F){motifs <-append(motifs,element)}
+      }else if(sitelist[i,"motif"]=="UNUAR"){
+        seq_to_search <- gsub("T","U",toupper(substr(viral_genome,(left_int-2),(right_int+2))))
+        element <- unlist(str_extract_all(seq_to_search,as.character(sitelist[i,"ref_kmer"])))
+        if(is_empty(element)==F){motifs <- append(motifs,element)}
+      }else if(sitelist[i,"motif"]=="GUUNNA"){
+        seq_to_search <- gsub("T","U",toupper(substr(viral_genome,(left_int-2),(right_int+3))))
+        element <- unlist(str_extract_all(seq_to_search,as.character(sitelist[i,"ref_kmer"])))
+        if(is_empty(element)==F){motifs <-append(motifs,element)}
+      }
+    }
+    return(toString(motifs))
+  }
+}else if(which_nucl=="A"){
+  get_motif = function(left_int,right_int){
+    motifs <- vector()
+    for(i in 1:nrow(sitelist)){
+      seq_to_search <- gsub("T","U",toupper(substr(viral_genome,left_int-2,right_int+2)))
+      element <- unlist(str_extract_all(seq_to_search,as.character(sitelist[i,"ref_kmer"])))
+      if(is_empty(element)==F){motifs <-append(motifs,element)}
+    }
+    return(toString(motifs))
+  }
 }
+
 
 # Function to know if fleming sites are present
 get_fleming = function(left_x,right_x) {
@@ -74,106 +107,222 @@ get_tx = function(ORF) {
   return(temp)
 }
 
+# Function that lists the assembly junction sites for each transcript of the assembly
+junc_blacklist = function(transcript) {
+  corr_row <- subset(assembly_junction_sites, assembly_junction_sites$id %in% transcript)
+  blacklist_vec <- as.numeric(as.vector(corr_row[1,7:12]))
+  blacklist_vec <- blacklist_vec[!is.na(blacklist_vec)]
+  black_int <- vector()
+  for (i in blacklist_vec){
+    temp <- seq(from = i-ORF_junc_interval_left, to = i+ORF_junc_interval_right, by = 1)
+    black_int <- c(black_int,temp)
+  }
+  black_int <- black_int[which(black_int > 0)] %>% sort()
+  return(black_int)
+}
+
+# Function to get the ORF encoded nucleotide per nucleotide
+get_ORF_per_nucl = function(ORF_name,left_int,right_int) {
+  assembly_C <- subset(assembly,canonicity=="C")
+  temp <- assembly_C[with(assembly_C, ORF %in% ORF_name),]$id
+  blacklist_tx <- vector()
+  for (i in temp){
+    blacklist_tx <- c(blacklist_tx,junc_blacklist(i))
+  }
+  blacklist_tx <- unique(sort(blacklist_tx))
+  ORF_junctions <- intersect(blacklist_tx,seq(left_int,right_int,by=1))
+  IVT_junctions <- intersect(blacklist_IVT,seq(left_int,right_int,by=1))
+  tot_junctions <- unique(sort(c(ORF_junctions,IVT_junctions)))
+  return(toString(tot_junctions))
+}
+
+# Function to get shared intervals of nucleotides
+get_shared = function(data_list) {
+  ORF_id<-unique(data_list$ORF)
+  full_seq <- seq(min(data_list$genomicPos),max(data_list$genomicPos),1) %>%
+    as.data.frame()
+  colnames(full_seq)<- c("genomicPos")
+  data_list <- as.data.frame(left_join(full_seq,data_list,by="genomicPos"))
+  right <- data.frame()
+  if(is.na(data_list[2,"ORF"])==T){right <- as.data.frame(data_list[1,"genomicPos"])}
+  left <- as.data.frame(data_list[1,"genomicPos"])
+  for (row in 2:nrow(data_list)){
+    if(is.na(data_list[(row+1),"ORF"])==T & is.na(data_list[(row-1),"ORF"])==F & is.na(data_list[(row),"ORF"])==F){
+      right <- rbind(right,data_list[row,"genomicPos"])}
+    else if(is.na(data_list[(row+1),"ORF"])==T & is.na(data_list[(row-1),"ORF"])==T & is.na(data_list[(row),"ORF"])==F){
+      right <- rbind(right,data_list[row,"genomicPos"])}
+  }
+  colnames(right) <- c("right_interval")
+  colnames(left) <- c("left_interval")
+  for (row in 2:nrow(data_list)){
+    if(is.na(data_list[(row+1),"ORF"])==F & is.na(data_list[(row-1),"ORF"])==T & is.na(data_list[(row),"ORF"])==F){
+      left <- rbind(left,data_list[row,"genomicPos"])}
+    else if(is.na(data_list[(row+1),"ORF"])==T & is.na(data_list[(row-1),"ORF"])==T & is.na(data_list[(row),"ORF"])==F){
+      left <- rbind(left,data_list[row,"genomicPos"])}
+  }
+  colnames(left) <- c("left_interval")
+  interval <- cbind(left,right)%>%
+    rowwise()%>%
+    dplyr::mutate(sequence=gsub("T","U",toupper(substr(viral_genome,left_interval, right_interval)))) %>%
+    rowwise()%>%
+    dplyr::mutate(mod=get_motif(left_interval,right_interval)) %>%
+    dplyr::mutate(ORF=ORF_id)
+  return(interval)
+}
+
+# Function to get presence in multiple cell lines
+get_presence = function(peaked_data){
+  appo <- peaked_data
+  peaked_data <- bind_rows(peaked_data) %>%
+    distinct()
+  present_in_caco2 <- do.call(paste0, peaked_data) %in% do.call(paste0, appo[[1]])
+  present_in_calu3 <- do.call(paste0, peaked_data) %in% do.call(paste0, appo[[2]])
+  present_in_vero <- do.call(paste0, peaked_data) %in% do.call(paste0, appo[[3]])
+  peaked_data <- cbind(peaked_data,present_in_caco2,present_in_calu3,present_in_vero)%>%
+    distinct() %>%
+    rowwise() %>%
+    dplyr::mutate(presence=sum(c(present_in_caco2,present_in_calu3,present_in_vero), na.rm = TRUE))
+}
+
+# Function to get overlap of a sequence interval with fragments (even if partial)
+get_fragment_partial_overlap = function(left_int,right_int){
+  fragments_vec <- apply(fragments, 1, function(x){
+    if(exists("fragments_list")==F){fragments_list <- vector()}
+    if((c(left_int,right_int) %overlaps% c(as.numeric(x[2]),as.numeric(x[3])))==T){
+      fragments_list <- append(fragments_list,as.character(x[1]))
+    }
+    return(fragments_list)
+  })
+  return(toString(unlist(fragments_vec)))
+}
+
 
 
 ########################### GENERAL DATA #######################################
 
-tx <- read_tsv(bdp("analysis/recappable_assembly/two_datasets/assemblies/pinfish/consensus_extraction/orf_annotate/orf_annotate.bed"), col_names=c("chr", "start", "end", "name", "score", "strand", "cdsStart", "cdsEnd", ".", "ex", "exLen", "exSt"), col_types="cnncncnnnncc")
-ref_id_others <- tx %>% 
-  select(name) %>% 
-  separate(name, into=c("ref_id","others"),sep="::") %>% 
-  separate(others, into=c("others","bla"),sep="#") %>% 
-  select(-bla)
+IVT <- read_tsv(bdp("scripts_new/backupped_data/IVT_junctions.bed"), col_names = c("chrom","start","end","id","score","strand"),col_types="cnncnc") %>% 
+  dplyr::mutate(start=(start-1),end=(end-1))
+assembly <- read.table(bdp("scripts_new/backupped_data/data_huxelerate_extraction/transcriptome_assembly/aln_consensus.bed"), col.names = c("chrom","start","end","id","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"), sep="\t")
+tx <- read_tsv(bdp("analysis/recappable_assembly/two_datasets/assemblies/pinfish/consensus_extraction/orf_annotate/orf_annotate.bed"), col_names=c("chr", "start", "end", "ref_id", "score", "strand", "cdsStart", "cdsEnd", ".", "ex", "exLen", "exSt"), col_types="cnncncnnnncc")
+tx_lengths <- read.table(bdp("analysis/recappable_assembly/two_datasets/assemblies/pinfish/aln_consensus.bed"), sep = '\t',header = FALSE) %>%
+  separate(V11, into=c("ex1","ex2","ex3") ,sep=",", remove=F) 
+fragments <- read_tsv(bdp("scripts_new/backupped_data/RAPID/fragments_genomic_coord_UCSC.txt"),col_types = "cnn")
+fragments_bed <- fragments %>% 
+  dplyr::mutate(start=(start-1),end=(end-1))
 viral_genome <- read.fasta(file="/Volumes/scratch/TSSM/cugolini/CoV-2_analysis/reference_genome/results/edited.fa") %>%
   getSequence(as.string=T) %>% unlist()
-assembly <-read.table(bdp("scripts_new/backupped_data/data_huxelerate_extraction/transcriptome_assembly/aln_consensus.bed"), col.names = c("chrom","start","end","id","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"), sep="\t")
-sitelist <- read_tsv(bdp("scripts_new/backupped_data/sites_pseudoU_motifs_blacklist.txt"),col_types="cccc") %>% 
-  dplyr::rename(motif=IUPAC) 
-file_list <- list.files(path = RESULTSDIR,pattern = "*_modified_sites.xls" , full.names = TRUE,  recursive = F)
+file_list <- list.files(path = RESULTSDIR,pattern = paste0("*_modified_sites_",which_nucl,".xls") , full.names = TRUE,  recursive = F)
 
+
+##  input files that are different depending in which nucleotide the modification is
+if(which_nucl=="U"){
+  sitelist <- read_tsv(bdp("scripts_new/backupped_data/sites_pseudoU_motifs_blacklist.txt"),col_types="ccc") %>%
+    dplyr::rename(motif=IUPAC) %>%
+    subset(motif=="UNUAR")                                                      # use only UNUAR motifs
+}else if(which_nucl=="A"){
+  sitelist <- read_tsv(bdp("scripts_new/backupped_data/sites_blacklist.txt"),col_types="ccc") %>%
+    dplyr::rename(motif=IUPAC) %>% subset(modif=="m6A")
+}
+
+# Dataframe that reports IVT junctions
+junction_sites <- IVT %>% 
+  dplyr::select(start,end) %>% 
+  unlist(use.names=FALSE) %>% 
+  sort()
+blacklist_IVT <- vector()
+for (i in junction_sites){
+  temp <- seq(from = i-IVT_junc_interval_left, to = i+IVT_junc_interval_right, by = 1)
+  blacklist_IVT <- c(blacklist_IVT,temp)
+}
+blacklist_IVT <- blacklist_IVT[which(blacklist_IVT >= 0)]
+
+# Dataframe that reports the assembly junction sites
+assembly_junction_sites <- assembly %>% 
+  dplyr::select(start,end,id,blockSizes,blockStarts) %>% 
+  separate(blockSizes, into = c("blSize1","blSize2","blSize3"), sep = ",",convert=T) %>%
+  separate(blockStarts, into = c("blStart1","blStart2","blStart3"), sep = ",",convert=T) %>%
+  mutate(blStart1 = (blStart1 + start)) %>%
+  mutate(blStart2 = (blStart2 + start)) %>%
+  mutate(blStart3 = (blStart3 + start)) %>%
+  mutate(blEnd1 = (blStart1 + blSize1)) %>%
+  mutate(blEnd2 = (blStart2 + blSize2)) %>%
+  mutate(blEnd3 = (blStart3 + blSize3)) 
 
 # Dataframe that reports canonicity for every transcript of the assembly
 canonicity <- dplyr::select(assembly,start,end,id) %>%
   mutate(canonicity=ifelse(start>100,"NC", "C")) %>%
   mutate(canonicity=ifelse(end<29000,"NC", canonicity)) %>%
-  #mutate(canonicity=ifelse(id=="efad7b96-ac2e-4ce1-9b83-863ffdb18eac|116","NC", canonicity)) %>%  #ORF10
-  #mutate(canonicity=ifelse(id=="de81ef19-655d-4ced-a9cc-cb8384001058|107","NC", canonicity)) %>%  #ORF9D
   dplyr::select(-start,-end) 
 
 # Dataframe that returns ORFs for every transcript of the assembly
-names <- dplyr::select(tx, orig=name) %>% separate(orig, into=c("id", "protein"), sep="#", remove=F) %>%
+names <- dplyr::select(tx, orig=ref_id) %>% 
+  separate(orig, into=c("ref_id", "protein"), sep="#", remove=F) %>%
   mutate(protein=case_when(is.na(protein)~"Unknown", T~protein)) %>%
   separate(protein, into=c("sp", "uniprot_id", "protein"), sep="\\|", remove=F) %>%
   dplyr::select(-sp) %>%
-  mutate(name=gsub("([^\\(]+).+", "\\1", protein),
+  mutate(ORF=gsub("([^\\(]+).+", "\\1", protein),
          tip=as.numeric(gsub("([^\\(]+)\\(([^%]+)%/([^%]+)%\\)", "\\2", protein)),
          qip=as.numeric(gsub("([^\\(]+)\\(([^%]+)%/([^%]+)%\\)", "\\3", protein))) %>%
   dplyr::select(-protein) %>%
   dplyr::select(-orig) %>%
-  mutate(name=case_when(is.na(name)~"Unknown", T~name))
+  mutate(ORF=case_when(is.na(ORF)~"Unknown", T~ORF))
 
-names$name[names$id == "efad7b96-ac2e-4ce1-9b83-863ffdb18eac|116::NC_045512v2:11-29873"] <- "ORF10_SARS2"   # manually add ORF9d and ORF10 
-names$name[names$id == "de81ef19-655d-4ced-a9cc-cb8384001058|107::NC_045512v2:11-29874"] <- "ORF9D_SARS2"
+names$ORF[names$ref_id == "efad7b96-ac2e-4ce1-9b83-863ffdb18eac|116::NC_045512v2:11-29873"] <- "ORF10_SARS2"   # manually add ORF9d and ORF10 
+names$ORF[names$ref_id == "de81ef19-655d-4ced-a9cc-cb8384001058|107::NC_045512v2:11-29874"] <- "ORF9D_SARS2"
 
 
 assembly <- left_join(assembly,canonicity,by="id")
-names <- names %>% select(id,name) %>% separate(id,into=c("id"),sep = "::",remove=T)
+names <- names %>% select(ref_id,ORF) %>% separate(ref_id,into=c("id","others"),sep = "::",remove=T)
 assembly <- left_join(assembly,names,by="id")
 
 assembly_multiple_isoform <- assembly %>% 
   subset(canonicity=="C") %>% 
-  group_by(name) %>% 
+  group_by(ORF) %>% 
   filter(n()>1)
+
 
 ####################### PROCESSING OF THE DATABASES ############################
 
 ### peak called datasets
 
 peakcalled_1_iso <- lapply(file_list,function(x){
-  linename <- str_remove(basename(x),"_modified_sites.xls")
-  x <- read.xlsx(x,sheetName ="peakcalled_canonical_Us",as.data.frame = T)%>%
+  linename <- str_remove(basename(x),paste0("_modified_sites_",which_nucl,".xls"))
+  x <- read.xlsx(x,sheetName = paste0("peakcalled_canonical_",which_nucl,"s"),as.data.frame = T)%>%
     mutate(cell_type=linename) %>%
-    subset(ref_id %!in% assembly_multiple_isoform$id)
-  x <- split(x, x$ref_id)
+    subset(id %!in% assembly_multiple_isoform$id) %>%
+    select(-fleming_presence)
+  x <- split(x, x$id)
   x <- lapply(x, function(y){
-    tx <- unique(y$ref_id)
+    tx <- unique(y$id)
     y <-y %>% 
-      select("genomicPos","ref_id")%>%
+      select("genomicPos","id")%>%
       mutate(type="central")
     tot_new <- data.frame()
     for (row in 1:nrow(y)){
       genpos <- y[row, "genomicPos"]
       new_sites <- as.data.frame(seq((genpos-4),(genpos+4),1))
       colnames(new_sites) <- c("genomicPos")
-      new_sites <- new_sites %>% mutate(ref_id=tx,type="extended")
+      new_sites <- new_sites %>% mutate(id=tx,type="extended")
       tot_new <- rbind(tot_new,new_sites)
     }
-    y <- rbind(y,tot_new) %>% select(-type) %>% distinct()
+    y <- rbind(y,tot_new) %>% select(-type) %>% distinct() %>% as.data.frame()
+    rownames(y) <- NULL
     return(y)
   })
   x <- bind_rows(x)
+  return(x)
 })
-
-appo <- peakcalled_1_iso
-peakcalled_1_iso <- bind_rows(peakcalled_1_iso)
-present_in_caco2 <- do.call(paste0, peakcalled_1_iso) %in% do.call(paste0, appo[[1]])
-present_in_calu3 <- do.call(paste0, peakcalled_1_iso) %in% do.call(paste0, appo[[2]])
-present_in_vero <- do.call(paste0, peakcalled_1_iso) %in% do.call(paste0, appo[[3]])
-peakcalled_1_iso <- cbind(peakcalled_1_iso,present_in_caco2,present_in_calu3,present_in_vero)
-
-temp <- assembly %>% select(id,name) %>% dplyr::rename(ref_id=id,ORF=name)
-peakcalled_1_iso <- peakcalled_1_iso %>% 
-  rowwise() %>%
-  dplyr::mutate(presence=sum(c(present_in_caco2,present_in_calu3,present_in_vero), na.rm = TRUE))%>%
-  left_join(temp,by="ref_id") %>%
-  select(-ref_id) %>%
+peakcalled_1_iso <- get_presence(peakcalled_1_iso) %>%
+  left_join(select(assembly,id,ORF) ,by="id") %>%
+  select(-id) %>%
   dplyr::relocate(ORF, .after=genomicPos)
 
 peakcalled_multiple_iso <- lapply(file_list,function(x){
-  linename <- str_remove(basename(x),"_modified_sites.xls")
-  x <- read.xlsx(x,sheetName ="peakcalled_canonical_Us",as.data.frame = T)%>%
+  linename <- str_remove(basename(x),paste0("_modified_sites_",which_nucl,".xls"))
+  x <- read.xlsx(x,sheetName =paste0("peakcalled_canonical_",which_nucl,"s"),as.data.frame = T)%>%
     mutate(cell_type=linename) %>%
-    subset(ref_id %in% assembly_multiple_isoform$id)
+    subset(id %in% assembly_multiple_isoform$id)%>%
+    select(-fleming_presence)
   x <- split(x, x$ORF)
   x <- lapply(x, function(y){
     ORF_id <- unique(y$ORF)
@@ -189,82 +338,93 @@ peakcalled_multiple_iso <- lapply(file_list,function(x){
       new_sites <- new_sites %>% mutate(ORF=ORF_id,type="extended")
       tot_new <- rbind(tot_new,new_sites)
     }
-    y <- rbind(y,tot_new) %>% select(-type) %>% distinct()
+    y <- rbind(y,tot_new) %>% select(-type) %>% distinct() %>% as.data.frame()
+    rownames(y) <- NULL
     return(y)
   })
   x <- bind_rows(x)
+  return(x)
 })
-
-appo <- peakcalled_multiple_iso
-peakcalled_multiple_iso <- bind_rows(peakcalled_multiple_iso)
-present_in_caco2 <- do.call(paste0, peakcalled_multiple_iso) %in% do.call(paste0, appo[[1]])
-present_in_calu3 <- do.call(paste0, peakcalled_multiple_iso) %in% do.call(paste0, appo[[2]])
-present_in_vero <- do.call(paste0, peakcalled_multiple_iso) %in% do.call(paste0, appo[[3]])
-peakcalled_multiple_iso <- cbind(peakcalled_multiple_iso,present_in_caco2,present_in_calu3,present_in_vero)
-
-peakcalled_multiple_iso <- peakcalled_multiple_iso %>% 
-  rowwise() %>%
-  dplyr::mutate(presence=sum(c(present_in_caco2,present_in_calu3,present_in_vero), na.rm = TRUE))
-
+peakcalled_multiple_iso <- get_presence(peakcalled_multiple_iso)
+  
 for (i in 2:3){
   shared <- rbind(peakcalled_1_iso,peakcalled_multiple_iso) %>% 
-    subset(presence==i) %>% 
+    subset(presence>=i) %>% 
     distinct()
   shared <- split(shared,shared$ORF)
-  shared <- lapply(shared, function(x){
-    ORF_id<-unique(x$ORF)
-    full_seq <- seq(min(x$genomicPos),max(x$genomicPos),1) %>%
-      as.data.frame()
-    colnames(full_seq)<- c("genomicPos")
-    x<-as.data.frame(left_join(full_seq,x,by="genomicPos"))
-    right <- data.frame()
-    if(is.na(x[2,"ORF"])==T){right <- as.data.frame(x[1,"genomicPos"])}
-    left <- as.data.frame(x[1,"genomicPos"])
-    for (row in 2:nrow(x)){
-      if(is.na(x[(row+1),"ORF"])==T & is.na(x[(row-1),"ORF"])==F & is.na(x[(row),"ORF"])==F){
-        right <- rbind(right,x[row,"genomicPos"])}
-      else if(is.na(x[(row+1),"ORF"])==T & is.na(x[(row-1),"ORF"])==T & is.na(x[(row),"ORF"])==F){
-        right <- rbind(right,x[row,"genomicPos"])}
-    }
-    colnames(right) <- c("right_interval")
-    colnames(left) <- c("left_interval")
-    for (row in 2:nrow(x)){
-      if(is.na(x[(row+1),"ORF"])==F & is.na(x[(row-1),"ORF"])==T & is.na(x[(row),"ORF"])==F){
-        left <- rbind(left,x[row,"genomicPos"])}
-      else if(is.na(x[(row+1),"ORF"])==T & is.na(x[(row-1),"ORF"])==T & is.na(x[(row),"ORF"])==F){
-        left <- rbind(left,x[row,"genomicPos"])}
-    }
-    colnames(left) <- c("left_interval")
-    interval <- cbind(left,right) %>%
-      dplyr::mutate(left_interval=(left_interval-2),right_interval=(right_interval+2))%>%
-      rowwise()%>%
-      dplyr::mutate(sequence=gsub("T","U",toupper(substr(viral_genome,left_interval, right_interval)))) %>%
-      rowwise()%>%
-      dplyr::mutate(mod=get_motif(sequence)) %>%
-      rowwise()%>%
-      dplyr::mutate(fleming_presence=get_fleming(left_interval,right_interval)) %>%
-      dplyr::mutate(ORF=ORF_id)
-    return(interval)
-  })
-  shared <- bind_rows(shared)
-  if(i==2){
-    shared_2<-shared
-    }
-  else{
-    shared_3 <- shared
-    }
+  shared <- lapply(X=shared, function(x){get_shared(x)})
+  shared <- bind_rows(shared) %>%
+    rowwise()%>%
+    dplyr::mutate(fleming_presence=get_fleming(left_interval,right_interval)) %>%
+    rowwise()%>%
+    dplyr::mutate(fragments_partial_included=get_fragment_partial_overlap(left_interval,right_interval))%>%
+    rowwise()%>%
+    dplyr::mutate(nucleotides_in_junctions=get_ORF_per_nucl(ORF,left_interval,right_interval))
+  if(i==2){shared_2<-shared}
+  else{shared_3 <- shared}
 }
 
-write.xlsx(as.data.frame(shared_2), file="/Users/camillaugolini/Desktop/shared.xls",sheetName="shared_2",row.names=F,col.names=T)
-write.xlsx(as.data.frame(shared_3), file="/Users/camillaugolini/Desktop/shared.xls",sheetName="shared_3",row.names=F,col.names=T,append=T)
 
+write.xlsx(as.data.frame(shared_2), file=rdp(paste0("shared_",which_nucl,".xls")),sheetName=paste0("shared_2_",which_nucl),row.names=F,col.names=T)
+write.xlsx(as.data.frame(shared_3), file=rdp(paste0("shared_",which_nucl,".xls")),sheetName=paste0("shared_3_",which_nucl),row.names=F,col.names=T,append=T)
+
+
+############################### TRACKS #########################################
+
+# Canonical assembly track
+assembly_track <- assembly %>%
+  subset(canonicity=="C") %>%
+  select(-canonicity,-id)%>%
+  relocate(ORF, .after = end)%>%
+  select(-others)
+write.table(assembly_track,sep = "\t",quote = F,row.names = F,col.names = F,file = rdp("shared/bedtracks/assembly.bed"))
+
+# mods
+
+final2 <- subset(shared_2,mod!="")
+final2 <- split(final2,final2$ORF)
+bed_list <- lapply(final2, function(x){
+  ORF_id <- unique(x$ORF)
+  x <- x %>%
+    mutate(start=(left_interval-1)) %>%
+    mutate(end=right_interval) %>%
+    mutate(name=paste0("U_genomicpos=",left_interval,"_",right_interval,"_ORF=",ORF_id))%>%
+    mutate(chr="NC_045512v2")%>%
+    mutate(score=0)%>%
+    mutate(strand="+") %>%
+    select(chr,start,end,name,score,strand)
+  write.table(x,sep = "\t",quote = F,row.names = F,col.names = F,file = rdp(paste("shared/bedtracks/2_shared_peakcalled_Us_",ORF_id,".bed",sep="")))
+  
+})
+
+final3 <- subset(shared_3,mod!="")
+final3 <- split(final3,final3$ORF)
+bed_list <- lapply(final3, function(x){
+  ORF_id <- unique(x$ORF)
+  x <- x %>%
+    mutate(start=(left_interval-1)) %>%
+    mutate(end=right_interval) %>%
+    mutate(name=paste0("U_genomicpos=",left_interval,"_",right_interval,"_ORF=",ORF_id))%>%
+    mutate(chr="NC_045512v2")%>%
+    mutate(score=0)%>%
+    mutate(strand="+") %>%
+    select(chr,start,end,name,score,strand)
+  write.table(x,sep = "\t",quote = F,row.names = F,col.names = F,file = rdp(paste("shared/bedtracks/3_shared_peakcalled_Us_",ORF_id,".bed",sep="")))
+  
+})
+
+
+
+############################### PLOTS #########################################
+
+##############  Violin plots
 ### inspect Fleming sites
-
-flem <- shared_3 %>%
+ref_id_others <- ref_id_others %>% dplyr::rename(id=ref_id)
+flem <- shared_2 %>%
   subset(fleming_presence==T)%>%
   subset(ORF %!in% assembly_multiple_isoform$name) %>%
-  mutate(ref_id=get_tx(ORF)) %>%
-  left_join(ref_id_others,by="ref_id")
+  mutate(id=get_tx(ORF)) %>%
+  left_join(ref_id_others,by="id")
 tx_id <- paste0(unique(flem$ref_id),"::",unique(flem$others))
 tx_sub <- sub("\\|","_",sub(":","_",sub("::","_",tx_id)))
 
@@ -483,7 +643,7 @@ shared_3 <- lapply(dir_list,function(x){
   tx <- basename(x)
   x <- read.table(file=paste0(x,"/common_merged.bed3"),sep = '\t')
   colnames(x) <- c("chr","start","end")
-  x%>%
+
 })
 
 
@@ -703,18 +863,6 @@ bed_list <- lapply(final3, function(x){
 })
 
 
-# Canonical assembly track
-assembly_track <- assembly %>%
-  subset(canonicity=="C") %>%
-  subset(id %!in% assembly_multiple_isoform$id)%>%
-  select(-canonicity,-id)%>%
-  relocate(name, .after = end)
-assembly_multiple_isoform <- head(assembly_multiple_isoform,2) %>%
-  select(-canonicity,-id)%>%
-  relocate(name, .after = end)
-assembly_track <- rbind(assembly_track,assembly_multiple_isoform)
-write.table(assembly_track,sep = "\t",quote = F,row.names = F,col.names = F,file = rdp("shared/bedtracks/assembly.bed"))
-
 
 
 # Working on high-confidence sites
@@ -729,39 +877,4 @@ lapply(corresp_table,function(x){
     select(pos,ref_tx)
   write.table(x,sep = "\t",quote = F,row.names = F,col.names = F,file = paste(CORRESPTABLEDIR,"/",ref_kmer,"_",genPos,".txt",sep=""))
 })
-
-
-# Figure for transcript
-
-ciao <- final %>%
-  subset(presence>=2)
-ciao <- as.data.frame(table(ciao$genomicPos))
-ciao$genomicPos<- as.character(ciao$genomicPos)
-ciao$presence<- as.character(ciao$presence)
-
-ggplot(ciao) +
-  geom_bar(aes(x = genomicPos, fill = presence))+
-  scale_fill_manual(values = c("gray", "red"))+
-  vlab
-
-pdf(rdp("FIGURES/supplementary.pdf"), width=10, height=5)
-ggplot(data=ciao, aes(x=Var1, y=Freq)) +
-  geom_bar(stat="identity") +
-  ylab("N° of transcripts (grouped per ORF) with a modified uridine") +
-  xlab("Genomic Position") +
-  theme_bw() +
-  vlab
-dev.off()
-  
-
-
-pippo <- final %>%
-  subset(presence>2)%>%
-  select(genomicPos)%>%distinct()
-
-pluto <- bind_rows(sites_all) %>%
-  select(genomicPos,ref_kmer)%>%distinct()
-
-miao <- left_join(pippo,pluto,by="genomicPos")
-miaone <- left_join(miao, peakcalled[[2]])
 

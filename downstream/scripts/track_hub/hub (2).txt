@@ -1,0 +1,112 @@
+hub SARS-CoV-2 NRCeq
+shortLabel SARS-CoV-2 Nanopore ReCappable Sequencing
+longLabel Analysis of SARS-CoV-2 5' capping sites using Nanopore ReCappable direct RNASeq
+useOneFile on
+email tommaso.leonardi@iit.it
+
+genome wuhCor1
+
+track NRCeq_assembly 
+shortLabel NRCeq assembly
+longLabel SARS-CoV2 Transcriptome assembly by NRCeq
+visibility squish
+type bigBed 12
+bigDataUrl https://figshare.com/ndownloader/files/31551080
+
+
+
+track TRS
+compositeTrack on
+shortLabel TRS sequences
+longLabel Location of TRS Sequences with or without mismatches
+allButtonPair on
+type bigBed 6
+
+      track TRS_0_mismatches
+      shortLabel TRS with 0 mismatches
+      longLabel Location of TRS Sequences with no mismatches
+      parent TRS on
+      type bigBed 6
+      labelFields none
+      bigDataUrl https://figshare.com/ndownloader/files/31552331
+      
+      track TRS_1_mismatch
+      shortLabel TRS with 1 mismatch
+      longLabel Location of TRS Sequences with 1 mismatch
+      parent TRS
+      type bigBed 6
+      labelFields none
+      bigDataUrl https://figshare.com/ndownloader/files/31551155
+      
+      track TRS_2_mismatches
+      shortLabel TRS with 2 mismatches
+      longLabel Location of TRS Sequences with 2 mismatches
+      parent TRS
+      type bigBed 6
+      labelFields none
+      bigDataUrl https://figshare.com/ndownloader/files/31551161
+
+
+
+track NRCeq_peaks 
+shortLabel NRCeq 5' peaks
+longLabel Coverage peaks calculated using the 5' sites of NRCeq alignments from Nanopore direct RNA
+visibility hide
+type bigBed 6
+bigDataUrl https://figshare.com/ndownloader/files/31551548?private_link=ab74a140f80c58faccbf
+
+
+track DRS_cov
+compositeTrack on
+shortLabel DRS alignment coverage
+longLabel Nanopore direct RNA-Seq Coverage
+allButtonPair on
+type bigWig
+
+      track DRS_cov_5p
+      shortLabel DRS alignment start-site coverage
+      longLabel Nanopore direct RNA-Seq Coverage calculated using alignment 5' coordinate only
+      parent DRS_cov
+      type bigWig
+      autoScale on
+      bigDataUrl https://figshare.com/ndownloader/files/31569674
+      
+      track DRS_cov_all
+      shortLabel DRS alignment coverage
+      longLabel Nanopore direct RNA-Seq Coverage 
+      parent DRS_cov
+      type bigWig
+      autoScale on
+      bigDataUrl https://figshare.com/ndownloader/files/31569692
+      
+
+track NRCeq_cov
+compositeTrack on
+shortLabel NRCeq alignment coverage
+longLabel Nanopore Recappable Sequencing RNA-Seq Coverage
+allButtonPair on
+type bigWig
+
+      track NRCeq_cov_5p
+      shortLabel NRCeq alignment start-site coverage
+      longLabel Nanopore Recappable Sequencing Coverage calculated using alignment 5' coordinate only
+      parent NRCeq_cov
+      type bigWig 0 150000
+      autoScale on
+      bigDataUrl https://figshare.com/ndownloader/files/31569725
+      
+      track NRCeq_cov_all
+      shortLabel NRCeq alignment coverage
+      longLabel Nanopore Recappable Sequencing Coverage 
+      parent NRCeq_cov
+      type bigWig 0 300000
+      autoScale on
+      bigDataUrl https://figshare.com/ndownloader/files/31569755
+
+track Illumina_junction
+shortLabel TRS-L junctions
+longLabel Coverage of Illumina reads from short sgRNA amplicons supporting a junction with the TRS-L
+type bigWig
+autoScale on
+bigDataUrl https://figshare.com/ndownloader/files/31570361
+

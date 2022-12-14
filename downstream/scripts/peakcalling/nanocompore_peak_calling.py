@@ -55,7 +55,7 @@ def filter_for_u(gmm_pvalues, positions, gpositions, kmers, lors):
     kmers_of_Us = []
     lors_of_Us = []
     for gmm, pos, gpos, kmer, lor in zip(gmm_pvalues, positions, gpositions, kmers, lors):
-        if (re.search("U",kmer) is not None)== True  or (re.search("T",kmer) is not None)== True :
+        if 'U' in kmer or 'T' in kmer:
             gmm_pvalues_of_Us.append(gmm)
             positions_of_Us.append(pos)
             gpositions_of_Us.append(gpos)
