@@ -4,11 +4,11 @@ library(GGally)
 library(tidyr)
 library(R.utils)
 library(reshape2)
-
+library(dplyr)
 
 ROOTDIR="/Volumes/scratch/TSSM/cugolini/cov"
 RESULTSDIR="/Volumes/scratch/FN/TL/cugolini/cov/scripts/downstream_PUS7KD/PUS7KD_C37/per_transcript_analysis/results"
-DATADIR="/Volumes/scratch/FN/TL/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp"
+DATADIR="/Volumes/scratch/TSSM/cugolini/cov/analysis/PUS7_KD_C37/map_to_recap_assembly/NANOCOMPORE/sampcomp"
 dir.create(RESULTSDIR)
 ########################### FUNCTIONS ##########################################
 
@@ -97,7 +97,7 @@ assign_fragment = function(df) {
 
 IVT <-read_tsv(bdp("scripts_new/backupped_data/IVT_junctions.bed"), col_names = c("chrom","start","end","id","score","strand"),col_types="cnncnc")
 assembly <-read.table(bdp("scripts_new/backupped_data/data_huxelerate_extraction/transcriptome_assembly/aln_consensus.bed"), col.names = c("chrom","start","end","id","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"), sep="\t")
-sitelist <- read_tsv(bdp("scripts_new/backupped_data/sites_blacklist.txt"),col_types="ccc") %>% rename(`Modification type`=IUPAC) 
+sitelist <- read_tsv(bdp("scripts_new/backupped_data/sites_blacklist.txt"),col_types="ccc") %>% dplyr::rename(`Modification type`=IUPAC) 
 tx <- read_tsv(bdp("analysis/recappable_assembly/two_datasets/assemblies/pinfish/consensus_extraction/orf_annotate/orf_annotate.bed"), col_names=c("chr", "start", "end", "name", "score", "strand", "cdsStart", "cdsEnd", ".", "ex", "exLen", "exSt"), col_types="cnncncnnnncc")
 tx_lengths <-read.table(bdp("analysis/recappable_assembly/two_datasets/assemblies/pinfish/aln_consensus.bed"), sep = '\t',header = FALSE) %>%
   separate(V11, into=c("ex1","ex2","ex3") ,sep=",", remove=F) 
@@ -111,15 +111,15 @@ WT_IVT_tx <- list.files(path = ddp("WT_IVT"),pattern = "*_results.tsv" , full.na
 ##################### ADDITIONAL DATAFRAME PROCESSING ##########################
 
 # Dataframe that returns ORFs for every transcript of the assembly
-names <- select(tx, orig=name) %>% separate(orig, into=c("id", "protein"), sep="#", remove=F) %>%
+names <- dplyr::select(tx, orig=name) %>% separate(orig, into=c("id", "protein"), sep="#", remove=F) %>%
   mutate(protein=case_when(is.na(protein)~"Unknown", T~protein)) %>%
   separate(protein, into=c("sp", "uniprot_id", "protein"), sep="\\|", remove=F) %>%
-  select(-sp) %>%
+  dplyr::select(-sp) %>%
   mutate(name=gsub("([^\\(]+).+", "\\1", protein),
          tip=as.numeric(gsub("([^\\(]+)\\(([^%]+)%/([^%]+)%\\)", "\\2", protein)),
          qip=as.numeric(gsub("([^\\(]+)\\(([^%]+)%/([^%]+)%\\)", "\\3", protein))) %>%
-  select(-protein) %>%
-  select(-orig) %>%
+  dplyr::select(-protein) %>%
+  dplyr::select(-orig) %>%
   mutate(name=case_when(is.na(name)~"Unknown", T~name))
 
 names$name[names$id == "efad7b96-ac2e-4ce1-9b83-863ffdb18eac|116::NC_045512v2:11-29873"] <- "ORF10_SARS2"   # manually add ORF9d and ORF10 
@@ -131,7 +131,7 @@ tx_lengths <- as.data.frame(tx_lengths) %>% mutate(sumrow= as.numeric(ex1)  + as
 
 # Dataframe that reports IVT junctions
 junction_sites <- IVT %>% 
-  select(start,end) %>% 
+  dplyr::select(start,end) %>% 
   unlist(use.names=FALSE) %>% 
   sort()
 blacklist_IVT <- vector()
@@ -142,7 +142,7 @@ for (i in junction_sites){
 blacklist_IVT <- blacklist_IVT[which(blacklist_IVT > 0)]
 
 # Dataframe that reports the assembly junction sites
-assembly_junction_sites <- assembly %>% select(start,end,id,blockSizes,blockStarts) %>% 
+assembly_junction_sites <- assembly %>% dplyr::select(start,end,id,blockSizes,blockStarts) %>% 
   separate(blockSizes, into = c("blSize1","blSize2","blSize3"), sep = ",") %>%
   separate(blockStarts, into = c("blStart1","blStart2","blStart3"), sep = ",") %>%
   mutate(blStart1 = (as.numeric(blStart1) + as.numeric(start))) %>%
@@ -153,11 +153,11 @@ assembly_junction_sites <- assembly %>% select(start,end,id,blockSizes,blockStar
   mutate(blEnd3 = (as.numeric(blStart3) + as.numeric(blSize3))) 
 
 # Dataframe that reports canonicity for every transcript of the assembly
-canonicity <- select(assembly,start,end,id) %>%
+canonicity <- dplyr::select(assembly,start,end,id) %>%
   mutate(canonicity=ifelse(start>100,"NC", "C")) %>%
   mutate(canonicity=ifelse(end<29000,"NC", canonicity)) %>%
-  select(-start,-end) %>%
-  rename(ref_id=id)
+  dplyr::select(-start,-end) %>%
+  dplyr::rename(ref_id=id)
 
 
 
@@ -175,7 +175,7 @@ PUS7_KD_WT <- lapply(PUS7_KD_WT_tx, function(x) {
       sep = "_(?=[0-9])",
       remove = F
     )%>%
-    select(-Y,-Z)%>%
+    dplyr::select(-Y,-Z)%>%
     subset(SAMPLEID != "NC")%>%
     mutate(ref_kmer = gsub("T", "U", ref_kmer))
 })
@@ -224,7 +224,6 @@ lapply(total_split,function(x){
 dev.off()
 
 ##  site selection
-
 PUS7_KD_WT_selected_sites <- bind_rows(total_split) %>%
   arrange(GMM_logit_pvalue)
 write.table(WT_IVT_selected_sites, rdp("PUS7_KD_WT_selected_sites.txt"), row.names = F,quote = F,sep="\t")
@@ -273,7 +272,7 @@ PUS7_KD_IVT <- lapply(PUS7_KD_IVT_tx, function(x) {
              sep = "_(?=[0-9])",
              remove = F
     )%>%
-    select(-Y,-Z)%>%
+    dplyr::select(-Y,-Z)%>%
     subset(SAMPLEID != "NC")%>%
     mutate(ref_kmer = gsub("T", "U", ref_kmer))
 })
@@ -364,7 +363,7 @@ WT_IVT <- lapply(WT_IVT_tx, function(x) {
              sep = "_(?=[0-9])",
              remove = F
     )%>%
-    select(-Y,-Z)%>%
+    dplyr::select(-Y,-Z)%>%
     subset(SAMPLEID != "NC")%>%
     mutate(ref_kmer = gsub("T", "U", ref_kmer))
 })
