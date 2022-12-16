@@ -10,15 +10,17 @@ library(seqinr)
 library(ggpubr)
 library(DescTools)
 
+
 # Directories to set
-ROOTDIR="/Volumes/scratch/TSSM/cugolini/cov"
-CURRDIR="/Volumes/scratch/FN/TL/cugolini/cov/scripts"
+ROOTDIR=""                                                                      # insert directory where the analysis will be stored
+CURRDIR=""                                                                      # insert script directory
 which_nucl <- "U"                                                               # nucleotide on which to look for the modification 
+BASECALLING="guppy_initial"                                                     # guppy version used for basecalling
 
 #Source functions and set directories 
 source(paste(dirname(getSourceEditorContext()$path),"functions.R",sep="/"))     # source script with functions
 FILES=cdp("files")                                                              # directories where useful files for the analysis are found
-RESULTSDIR=cdp("private/downstream/results_allfiles_LOR05_pval001")             # directory where results for single cell line are stored
+RESULTSDIR=bdp("results/sgRNAs_mods_detection")                                 # directory where results will be stores
 IVT_bedfile=fdp("IVT_junctions.bed")                                            # IVT bedfile from Kim et al.
 assembly_bedfile=fdp("aln_consensus_name_commas.bed")                           # NRCeq assembly bedfile from Ugolini et al.
 ORF_annotation_bedfile=fdp("orf_annotate.bed")                                  # ORF annotation from Ugolini et al.
@@ -27,10 +29,11 @@ viral_genome_fasta=fdp("edited.fa")                                             
 pseudoU_motifs=fdp("sites_pseudoU_motifs_blacklist.txt")                        # list of putative motifs associate to pseudouridylation
 
 #Datasets
-cell_line <- as.list(c("calu3","caco2","vero"))                                 # list of cell lines included in the analysis
-calu3_results <- bdp("analysis/7_samples_extraction/nanocompore/HUXELERATE_RESULTS/extraction/nanocompore/comparison/sraf_calu3")
-caco2_results <- bdp("analysis/per_cell_line/caco2/NANOCOMPORE/sampcomp")
-vero_results <- bdp("analysis/per_cell_line/vero/NANOCOMPORE/sampcomp")
+cell_line <- as.list(c("calu3","caco2","vero")) # list of cell lines included in the analysis
+calu3_results <- bdp(paste0("analysis/sgRNAs_mods_detection/",BASECALLING,"/CaLu3/nanocompore/sampcomp/"))
+caco2_results <- bdp(paste0("analysis/sgRNAs_mods_detection/",BASECALLING,"/CaCo2/nanocompore/sampcomp/"))
+vero_results <- bdp(paste0("analysis/sgRNAs_mods_detection/",BASECALLING,"/VeroE6/nanocompore/sampcomp/"))
+
 ########################### PARAMETERS #########################################
 
 LOR_thresh <- 0.5                                                               # Log Odds Ratio threshold                                                          

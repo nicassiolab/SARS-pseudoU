@@ -14,10 +14,8 @@ source(paste(dirname(getSourceEditorContext()$path),"general_dataset_processing.
 
 ########################### DIRECTORIES ##########################################
 
-CORRESPTABLEDIR=paste(RESULTSDIR,"/corresp_tables_Fleming")
-dir.create(paste0(RESULTSDIR,"/FIGURES/"),showWarnings = F)
-dir.create(paste0(RESULTSDIR,"/BEDTRACKS/"),showWarnings = F)
-dir.create(CORRESPTABLEDIR,recursive = T,showWarnings = F)
+dir.create(paste0(RESULTSDIR,"/FIGURES/"),showWarnings = F,recursive = T)
+dir.create(paste0(RESULTSDIR,"/BEDTRACKS/"),showWarnings = F,recursive=T)
 
 ########################### GENERAL DATA #######################################
 

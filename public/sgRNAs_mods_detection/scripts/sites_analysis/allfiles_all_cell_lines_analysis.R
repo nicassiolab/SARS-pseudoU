@@ -14,9 +14,9 @@ source(paste(dirname(getSourceEditorContext()$path),"variables.R",sep="/"))
 source(paste(dirname(getSourceEditorContext()$path),"functions.R",sep="/"))
 source(paste(dirname(getSourceEditorContext()$path),"general_dataset_processing.R",sep="/"))
 
-dir.create(paste0(RESULTSDIR,"/shared/bedtracks"),showWarnings = F)
-dir.create(paste0(RESULTSDIR,"/shared/corresp_tables"),showWarnings = F)
-dir.create(paste0(RESULTSDIR,"/shared/tracks_for_overlap"),showWarnings = F)
+dir.create(paste0(RESULTSDIR,"/shared/bedtracks"),showWarnings = F,recursive = T)
+dir.create(paste0(RESULTSDIR,"/shared/corresp_tables"),showWarnings = F,recursive=T)
+dir.create(paste0(RESULTSDIR,"/shared/tracks_for_overlap"),showWarnings = F,recursive=T)
 
 
 ####################### PROCESSING OF THE DATABASES ############################
