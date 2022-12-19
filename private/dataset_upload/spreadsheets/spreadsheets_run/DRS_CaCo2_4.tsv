@@ -1,0 +1,3 @@
+FileType	OxfordNanopore_native	Read submission file type	Fast5					
+sample	study	instrument_model	library_name	library_source	library_selection	library_strategy	file_name	file_md5
+DRS_CaCo2_4	PRJEB53497	GridION	DRS_SARS-CoV-2_CaCo2	TRANSCRIPTOMIC	RANDOM	RNA-Seq	DRS_CaCo2_4.tar.gz	128ae34681a8de1cba98766170d1e20c

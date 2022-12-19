@@ -1,0 +1,3 @@
+Checklist	ERC000011	ENA default sample checklist			
+tax_id	scientific_name	sample_alias	sample_title	sample_description	cell_line
+9606	 SARS-CoV-2	 DRS_CaCo2_3	 DRS_CaCo2_3	CaCo2 cells infected with SARS-CoV-2	CaCo2
