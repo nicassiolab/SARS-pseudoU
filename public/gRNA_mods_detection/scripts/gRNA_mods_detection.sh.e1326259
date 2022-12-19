@@ -1,0 +1,15 @@
+2022-12-16T11:54:55.288614+0100 WARNING - MainProcess | Running SampComp
+2022-12-16T11:54:55.289082+0100 INFO - MainProcess | Checking and initialising SampComp
+2022-12-16T11:54:55.292217+0100 INFO - MainProcess | Only 1 replicate found for condition WT
+2022-12-16T11:54:55.292477+0100 INFO - MainProcess | This is not recommended. The statistics will be calculated with the logit method
+2022-12-16T11:54:55.292793+0100 INFO - MainProcess | Only 1 replicate found for condition IVT
+2022-12-16T11:54:55.293148+0100 INFO - MainProcess | This is not recommended. The statistics will be calculated with the logit method
+2022-12-16T11:54:55.374166+0100 INFO - MainProcess | Reading eventalign index files
+2022-12-16T11:55:53.072103+0100 INFO - MainProcess | 	References found in index: 1
+2022-12-16T11:55:53.072486+0100 INFO - MainProcess | Filtering out references with low coverage
+2022-12-16T11:55:53.081071+0100 INFO - MainProcess | 	References remaining after reference coverage filtering: 1
+2022-12-16T11:55:54.351077+0100 INFO - MainProcess | Starting data processing
+2022-12-16T11:59:27.543745+0100 INFO - Process-12 | All Done. Transcripts processed: 1
+2022-12-16T11:59:27.829798+0100 INFO - MainProcess | Loading SampCompDB
+2022-12-16T11:59:27.896075+0100 INFO - MainProcess | Calculate results
+2022-12-16T11:59:33.710673+0100 INFO - MainProcess | Saving results

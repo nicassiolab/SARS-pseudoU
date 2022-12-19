@@ -2,8 +2,8 @@ source(paste(dirname(getSourceEditorContext()$path),"functions.R",sep="/"))
 
 ROOTDIR="/Volumes/scratch/TSSM/cugolini/cov"
 RESULTSDIR=bdp("analysis/gRNA_mods/guppy_initial/nanocompore/downstream")
-nanocompore_gRNAs_file <- bdp("analysis/gRNA_mods/guppy_initial/nanocompore/all_cell_lines/nanocompore/outnanocompore_results.tsv")
-SGRNASDIR <- ("/Volumes/scratch/FN/TL/cugolini/cov/scripts/downstream/results_allfiles_LOR05_pval001/shared/bedtracks")
+nanocompore_gRNAs_file <- bdp("analysis/gRNA_mods/guppy_initial/nanocompore/all_cell_lines/nanocompore/down_140/outnanocompore_results.tsv")
+SGRNASDIR <- ("/Volumes/scratch/FN/TL/cugolini/cov/scripts/private/downstream/results_allfiles_LOR05_pval001/shared/bedtracks")
 IVT_junctions_file <- bdp("scripts_new/backupped_data/IVT_junctions.bed")
 assembly_file <- bdp("scripts_new/backupped_data/data_huxelerate_extraction/transcriptome_assembly/aln_consensus.bed")
 fragments_file <- bdp("scripts_new/backupped_data/RAPID/fragments_genomic_coord_UCSC.txt")

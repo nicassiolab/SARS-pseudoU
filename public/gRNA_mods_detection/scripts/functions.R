@@ -101,7 +101,7 @@ kmer_overlaps_SNPs = function(kmer_pos,SNPs_annotation){
 # Function to intersect kmers and sgRNA sites intervals
 kmer_overlaps_sgRNA_site = function(kmer_pos,sgRNAs_annotation){
   kmer <- seq(kmer_pos,kmer_pos+4,1)
-  int_vector <-apply(sgrna_sites, 1, function(x) length(intersect(seq(x['start'],x['end'],1),kmer)))
+  int_vector <-apply(sgrna_sites, 1, function(x) length(intersect(seq(x['start'],(as.numeric(x['end'])-1),1),kmer)))
   if(max(int_vector)==0){return(F)}else{return(T)}
 }
 

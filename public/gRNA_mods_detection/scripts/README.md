@@ -7,10 +7,15 @@ This directory contains scripts to detect putative modifications on genomic SARS
 
 ### Execute nanocompore analysis
 To run the analysis compile the configuration file *configuration.sh* with the variables needed.
-The analysis can be run just executing the script *gRNA_mods_detection.sh* as a bash script or on a pbs cluster.
+The analysis can be run just executing the script *gRNA_mods_detection.sh* as a bash script:
 ```bash
-  ./gRNA_mods_detection.sh 
+  ./gRNA_mods_detection.sh "$(pwd)" 
 ```
+ or on a pbs cluster inserting the number of threads to use and the memory allocated for the job:
+```bash
+qsub -l select=1:ncpus=<threads>:mem=<memory to allocate> -v path="$(pwd)" gRNA_mods_detection.sh
+```
+
 ### Generate results
 To generate the results from the nanocompore analysis run the script *WT_vs_IVT_gRNAs_plots.R* on Rstudio. 
 

@@ -11,8 +11,8 @@ source $CURR_DIR/config.sh
 # load images
 source $CURR_DIR/images.sh
 
-WD="$BASEDIR/analysis/sgRNAs_mods_detection/$BASECALLING/per_cell_line"
-FASTA="$BASEDIR/analysis/fasta/$BASECALLING/per_cell_line"
+WD="$BASEDIR/analysis/sgRNAs_mods_detection/$BASECALLING"
+FASTA="$BASEDIR/analysis/fasta/$BASECALLING"
 
 
 # take sample file for basecalling version
@@ -44,5 +44,7 @@ for selected_cell_line in CaCo2 VeroE6 CaLu3; do
 done
 
 
+# generate violin plots 
+$SINGC python3 $CURR_DIR/pseudoU_signal_plots.py --transcriptome_assembly $TRANSCRIPTOME_ASSEMBLY --basecalling_version $BASECALLING --base_directory $BASEDIR
 
 

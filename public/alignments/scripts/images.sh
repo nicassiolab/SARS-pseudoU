@@ -2,12 +2,18 @@
 
 
 # load variables from general configuration file
-CURR_DIR=$(dirname "$(realpath "$0")")                                                  # obtain current script directory
+if [ -z "$path" ]
+then
+      CURR_DIR=$1
+else
+      CURR_DIR=$path
+fi					                                                # obtain current script directory
+
 CONFIG=$(echo $CURR_DIR | rev | cut -d'/' -f3- |rev)                                    # obtain configuration file directory
 source $CONFIG/general/config.sh
 
 # load local configuration file
-source $CURR_DIR/config.sh
+source $CURR_DIR/config.sh $CURR_DIR
 
 
 

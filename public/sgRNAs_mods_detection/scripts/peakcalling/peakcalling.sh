@@ -1,42 +1,34 @@
 #!/bin/bash
 set -e -o pipefail
-#export LC_ALL=C
 
-source /hpcnfs/home/ieo5215/miniconda/etc/profile.d/conda.sh
-
-SCRIPTDIR="/hpcnfs/scratch/FN/TL/cugolini/cov/scripts/downstream/scripts/peakcalling"
-BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
-DATA="$BASEDIR/data"
-WD="$BASEDIR/analysis/per_cell_line"
-REF_DATA="/hpcnfs/scratch/FN/camilla/nanopore/data"
-ENVS="/hpcnfs/home/ieo5215/miniconda/envs"
-nanocomp104="/hpcnfs/scratch/TSSM/cugolini/cov/img/nanocompore_v1.0.4.sif"
-
-###	vero cells
-mkdir -p  $WD/vero/NANOCOMPORE/peakcalling_U
-
-for filename in /hpcnfs/scratch/TSSM/cugolini/cov/analysis/per_cell_line/vero/NANOCOMPORE/sampcomp/*/outnanocompore_results.tsv; do
-	base=${filename##*/sampcomp/}
-	name=${base%/outnanocompore_results.tsv}
-	singularity exec -B /hpcnfs/scratch/ $nanocomp104 python3 $SCRIPTDIR/nanocompore_peak_calling.py -i $filename -o $WD/vero/NANOCOMPORE/peakcalling_U/"$name".bed
-done
-
-###	caco2 cells
-mkdir -p  $WD/caco2/NANOCOMPORE/peakcalling_U
-
-for filename in /hpcnfs/scratch/TSSM/cugolini/cov/analysis/per_cell_line/caco2/NANOCOMPORE/sampcomp/*/outnanocompore_results.tsv; do
-        base=${filename##*/sampcomp/}
-        name=${base%/outnanocompore_results.tsv}
-        singularity exec -B /hpcnfs/scratch/ $nanocomp104 python3 $SCRIPTDIR/nanocompore_peak_calling.py -i $filename -o $WD/caco2/NANOCOMPORE/peakcalling_U/"$name".bed
-done
+if [ -z "$path" ]
+then
+      CURR_DIR=$1
+else
+      CURR_DIR=$path
+fi					                                                # obtain current script directory
 
 
-###	calu3 cells
-mkdir -p  $WD/calu3/NANOCOMPORE/peakcalling_U
+CONFIG_GENERAL=$(echo $CURR_DIR | rev | cut -d'/' -f4- |rev)                            # obtain configuration file directory
+CONFIG=$(echo $CURR_DIR | rev | cut -d'/' -f2- |rev) 
+source $CONFIG_GENERAL/general/config.sh
 
-for filename in /hpcnfs/scratch/TSSM/cugolini/cov/analysis/7_samples_extraction/nanocompore/HUXELERATE_RESULTS/extraction/nanocompore/comparison/sraf_calu3/*/out_nanocompore_results.tsv; do
-        base=${filename##*/sraf_calu3/}
-        name=${base%/out_nanocompore_results.tsv}
-        singularity exec -B /hpcnfs/scratch/ $nanocomp104 python3 $SCRIPTDIR/nanocompore_peak_calling.py -i $filename -o $WD/calu3/NANOCOMPORE/peakcalling_U/"$name".bed
+# load local configuration file
+source $CONFIG/config.sh $CONFIG
+# load images
+source $CONFIG/images.sh $CONFIG
+
+
+WD="$BASEDIR/analysis/analysis/sgRNAs_mods_detection/$BASECALLING"
+
+
+for cell_line in CaLu3 CaCo2 VeroE6; do
+	for filename in $WD/$cell_line/nanocompore/sampcomp; do
+		base=${filename##*/sampcomp/}
+		name=${base%/outnanocompore_results.tsv}
+		mkdir -p $WD/$cell_line/nanocompore/peakcalling_"$which_nucl"
+		$NANOCOMPORE python3 $CURR_DIR/nanocompore_peak_calling.py -i $filename -o $WD/$cell_line/nanocompore/peakcalling_"$which_nucl"/"$name".bed
+
+	done
 done
 
