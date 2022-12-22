@@ -19,7 +19,7 @@ bdp <- function(relpath){
   return(paste0(ROOTDIR,"/",relpath))
 }
 
-# Function that returns full path from basedir
+# Function that returns full path from filesdir
 fdp <- function(relpath){
   return(paste0(FILES,"/",relpath))
 }

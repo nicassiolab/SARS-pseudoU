@@ -13,6 +13,15 @@ rdp <- function(relpath){
   return(paste0(RESULTSDIR,"/",relpath))
 }
 
+# Function that returns full path from filesdir
+fdp <- function(relpath){
+  return(paste0(FILES,"/",relpath))
+}
+
+# Function that returns full path from currentdir
+cdp <- function(relpath){
+  return(paste0(CURRDIR,"/",relpath))
+}
 
 # Functions for plot
 fancy_scientific <- function(l) {
