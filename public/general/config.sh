@@ -15,8 +15,3 @@ GENOME_PARAM="-k 8 -w 1 -ax splice -g 30000 -G 30000 -A1 -B2 -O2,24 -E1,0 -C0 -z
 TRANSCRIPTOME_PARAM="-ax map-ont -p 0 -N 10"							# mapping parameters to align reads to both viral and human transcriptome
 
 
-# data IVT
-IVT_raw="/hpcnfs/scratch/TSSM/tleonardi/SARS-CoV-2-datasets/Kim_2020/fast5/IVT/fast5_uncompressed"
-IVT_eventalign="/hpcnfs/scratch/TSSM/cugolini/cov/analysis/7_samples_extraction/nanocompore/HUXELERATE_RESULTS/extraction/eventalign/IVT"
-
-

@@ -37,7 +37,7 @@ for selected_cell_line in CaCo2 VeroE6 CaLu3; do
 	# compare eventalign files for each cell line to eventalign files for IVT, sgRNA per sgRNA
 	for filename in $WD/IVT/eventalign*; do
 		base=${filename##*/eventalign_}
-		$NANOCOMPORE nanocompore sampcomp --file_list1 $WD/$selected_cell_line/$condition/eventalign/collapse/out_eventalign_collapse.tsv  --file_list2 "$filename"/out_eventalign_collapse.tsv  --label1 $condition --label2 IVT --fasta $TRANSCRIPTOME_ASSEMBLY --outpath  $WD/$selected_cell_line/nanocompore/sampcomp/"$base" --overwrite --downsample_high_coverage 5000 --allow_warnings --min_coverage 30 --logit --nthreads $THREADS --bed $NANOCOMP_BED
+		$NANOCOMPORE nanocompore sampcomp --file_list1 $WD/$selected_cell_line/$condition/eventalign/collapse/out_eventalign_collapse.tsv --file_list2 "$filename"/out_eventalign_collapse.tsv  --label1 $condition --label2 IVT --fasta $TRANSCRIPTOME_ASSEMBLY --outpath  $WD/$selected_cell_line/nanocompore/sampcomp/"$base" --overwrite --downsample_high_coverage 5000 --allow_warnings --min_coverage 30 --logit --nthreads $THREADS --bed $NANOCOMP_BED
 
 	done 
 

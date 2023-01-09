@@ -23,12 +23,12 @@ SAMPLE_FILE="${FILES}/WT_samples_${BASECALLING}.txt"
 while IFS=$'\t' read sample fasta fast5 cell_line source; do
 
 	$NANOCOMPORE f5c index -d $fast5 $fasta
-	for filename in $BASEDIR/analysis/alignments/IVT/WT/alignments_to_assembly/splitted/sorted/*.bam; do
+	for filename in $BASEDIR/analysis/alignments/IVT/WT/alignments_to_assembly/splitted/sorted/*_sorted.bam; do
 		name=${filename##*/}
-                base=${name%.bam}
+                base=${name%_sorted.bam}
 	
 		mkdir -p $WD/IVT/eventalign_"$base"
-		$NANOCOMPORE sh -c "f5c eventalign --rna --min-mapq 0 -t $THREADS -r $fasta -b $BASEDIR/analysis/alignments/IVT/WT/alignments_to_assembly/splitted/sorted/"$base".bam --g $TRANSCRIPTOME_ASSEMBLY --samples --print-read-names --scale-events --disable-cuda=yes --iop $PARALLEL_JOBS |  nanocompore eventalign_collapse -o $WD/IVT/eventalign_"$base""
+		$NANOCOMPORE sh -c "f5c eventalign --rna --min-mapq 0 -t $THREADS -r $fasta -b $BASEDIR/analysis/alignments/IVT/WT/alignments_to_assembly/splitted/sorted/"$base"_sorted.bam --g $TRANSCRIPTOME_ASSEMBLY --samples --print-read-names --scale-events --disable-cuda=yes --iop $PARALLEL_JOBS |  nanocompore eventalign_collapse -o $WD/IVT/eventalign_"$base""
 	done
 
 done < <(grep "IVT" $SAMPLE_FILE)

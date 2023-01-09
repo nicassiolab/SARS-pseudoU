@@ -30,8 +30,8 @@ while IFS=$'\t' read sample fasta fast5 cell_line source; do
 		name=${filename##*/}
 		base=${name%.sam}
 		$SINGC samtools view -h -t $TRANSCRIPTOME_ASSEMBLY_FAI -Sb $filename > $WD/$BASECALLING/IVT/WT/alignments_to_assembly/splitted/bam/"$base".bam
-		$SINGC samtools sort $WD/$BASECALLING/IVT/WT/alignments_to_assembly/splitted/bam/"$base".bam > $WD/$BASECALLING/IVT/WT/alignments_to_assembly/splitted/sorted/"$base".bam
-		$SINGC samtools index $WD/$BASECALLING/IVT/WT/alignments_to_assembly/splitted/sorted/"$base".bam
+		$SINGC samtools sort $WD/$BASECALLING/IVT/WT/alignments_to_assembly/splitted/bam/"$base".bam > $WD/$BASECALLING/IVT/WT/alignments_to_assembly/splitted/sorted/"$base"_sorted.bam
+		$SINGC samtools index $WD/$BASECALLING/IVT/WT/alignments_to_assembly/splitted/sorted/"$base"_sorted.bam
 	done
 
 done < <(grep "IVT" $SAMPLE_FILE)
