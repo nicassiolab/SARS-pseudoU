@@ -1,1 +1,0 @@
-BASECALLING="guppy_v061"

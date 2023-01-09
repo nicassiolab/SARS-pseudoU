@@ -1,3 +1,0 @@
-FileType	fastq	Read submission file type					
-sample	study	instrument_model	library_name	library_source	library_selection	library_strategy	library_layout	file_name	file_md5
-DRS_CaCo2_4	PRJEB53497	GridION	DRS_SAMPLE_4	TRANSCRIPTOMIC	RANDOM	RNA-Seq	SINGLE	DRS_CaCo2_4_pass.fastq.gz	38bcb1c35db7ba25493743e0739a6d6c
