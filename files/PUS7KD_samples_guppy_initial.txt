@@ -1,3 +1,0 @@
-Sample	Fasta_location	Fast5_location	Cell_line	Source
-DRS_CaCo2_3	/hpcnfs/techunits/genomics/PublicData/TSSM/tleonardi/FAST5/20210414_1407_X2_FAL77079_62af908f/S33250_CaCo2_C34_plus_doxy_Pus7KD/fastq_pass	/hpcnfs/techunits/genomics/PublicData/TSSM/tleonardi/FAST5/20210414_1407_X2_FAL77079_62af908f/S33250_CaCo2_C34_plus_doxy_Pus7KD/fast5_pass	CaCo2	San Raffaele (Ugolini et al.)
-DRS_CaCo2_4	/hpcnfs/techunits/genomics/PublicData/TSSM/tleonardi/FAST5/20210825_1506_X2_FAL77483_43bd693a/S35756_CaCo2_C37_plus_doxy_Pus7_Pus7L_KD/fastq_pass	/hpcnfs/techunits/genomics/PublicData/TSSM/tleonardi/FAST5/20210825_1506_X2_FAL77483_43bd693a/S35756_CaCo2_C37_plus_doxy_Pus7_Pus7L_KD/fast5_pass	CaCo2	San Raffaele (Ugolini et al.)
