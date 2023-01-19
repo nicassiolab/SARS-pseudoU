@@ -54,10 +54,9 @@ $F5C f5c eventalign --rna --min-mapq 0 -t $THREADS -r $TEMP_DIR/all_samples.fa -
 
 # IVT processing
 mkdir -p $WD/IVT
-$F5C f5c eventalign --rna --min-mapq 0 -t $THREADS -r $ANALYSIS/fasta/IVT/IVT.fa -b $ANALYSIS/alignments/IVT/alignments_to_genome/IVT_sorted.bam --g $GENOME_FA --samples --print-read-names --scale-events --iop $PARALLEL_JOBS  | $NANOPOLISHCOMP NanopolishComp Eventalign_collapse -t $THREADS -o $WD/IVT/eventalign/collapse
+$F5C f5c eventalign --rna --min-mapq 0 -t $THREADS -r $ANALYSIS/fasta/$BASECALLING/IVT/WT/IVT.fa -b $ALIGNMENTS/$BASECALLING/IVT/WT/alignments_to_genome/IVT_sorted.bam --g $GENOME_FA --samples --print-read-names --scale-events --iop $PARALLEL_JOBS  | $NANOPOLISHCOMP NanopolishComp Eventalign_collapse -t $THREADS -o $WD/IVT/eventalign/collapse
 
 
 # nanocompore
-$NANOCOMPORE nanocompore sampcomp --file_list1 $WD/all_cell_lines/eventalign/collapse/out_eventalign_collapse.tsv --file_list2 $WD/IVT/eventalign/collapse/out_eventalign_collapse.tsv --label1 WT --label2 IVT --fasta $GENOME_FA --outpath $WD/all_cell_lines/nanocompore/ --overwrite --downsample_high_coverage 140 --allow_warnings --min_coverage 10 --logit --nthreads $THREADS
-
+$NANOCOMPORE nanocompore sampcomp --file_list1 $WD/all_cell_lines/eventalign/collapse/out_eventalign_collapse.tsv --file_list2 $WD/IVT/eventalign/collapse/out_eventalign_collapse.tsv --label1 WT --label2 IVT --fasta $GENOME_FA --outpath $WD/all_cell_lines/nanocompore_downsample_2100/ --overwrite --downsample_high_coverage 2100 --allow_warnings --min_coverage 10 --logit --nthreads $THREADS
 
