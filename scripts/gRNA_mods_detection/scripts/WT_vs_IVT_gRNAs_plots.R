@@ -124,7 +124,7 @@ pdf(rdp("WT_vs_IVT_sharkfin_no_junctions.pdf"),height=15,width=20)
     {
       ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),color=fragment_ID)) +
         geom_point(size=2) +
-        {if (nrow(subset(total,(GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh)))>0) ggrepel::geom_label_repel(data=dplyr::filter(., (GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh & grepl("U",ref_kmer)==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=2)}+
+        {if (nrow(subset(total,(GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh)))>0) ggrepel::geom_label_repel(data=dplyr::filter(., (GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh & grepl("U",ref_kmer)==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=3,max.overlaps = Inf,force = 8)}+
         scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
         theme_bw(22) +
         geom_hline(yintercept=-log10(pval_thresh_gRNAs), linetype="dashed", color = "red")+
@@ -139,7 +139,7 @@ total %>%
   {
     ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),color=fragment_ID)) +
       geom_point(size=2) +
-      {if (nrow(subset(total,(GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh)))>0) ggrepel::geom_label_repel(data=dplyr::filter(., (GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh & grepl("U",ref_kmer)==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=2)}+
+      {if (nrow(subset(total,(GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh)))>0) ggrepel::geom_label_repel(data=dplyr::filter(., (GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh & grepl("U",ref_kmer)==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=3)}+
       scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
       theme_bw(22) +
       geom_hline(yintercept=-log10(pval_thresh_gRNAs), linetype="dashed", color = "red")+
