@@ -26,7 +26,7 @@ FASTA="$BASEDIR/analysis/fasta/$BASECALLING"
 for condition in $SAMPLE_CONDITION ;do
 
 	# take sample file for each condition and basecalling version
-        SAMPLE_FILE="${FILES}/${condition}_samples_${BASECALLING}.txt"
+       SAMPLE_FILE="${FILES}/${condition}_samples_${BASECALLING}.txt"
 	
 
 	# read sample file 
@@ -70,5 +70,7 @@ for condition in $SAMPLE_CONDITION ;do
 	done < <(tail -n +2 $SAMPLE_FILE)
 
 done
+
+
 
 
