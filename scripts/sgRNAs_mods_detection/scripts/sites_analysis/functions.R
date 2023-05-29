@@ -9,6 +9,8 @@ library(xlsx)
 library(seqinr)
 library(ggpubr)
 library(DescTools)
+library(readr)
+
 
 ########################### FUNCTIONS ##########################################
 # Function to negate operator in
@@ -43,15 +45,15 @@ if(which_nucl=="U"){
     motifs <- vector()
     for(i in 1:nrow(sitelist)){
       if(sitelist[i,"motif"]=="UA"){
-        seq_to_search <- gsub("T","U",toupper(substr(viral_genome,left_int,right_int)))
+        seq_to_search <- gsub("T","U",toupper(substr(viral_genome,left_int+1,right_int+2)))
         element <- unlist(str_extract_all(seq_to_search,as.character(sitelist[i,"ref_kmer"])))
         if(is_empty(element)==F){motifs <-append(motifs,element)}
       }else if(sitelist[i,"motif"]=="UNUAR"){
-        seq_to_search <- gsub("T","U",toupper(substr(viral_genome,(left_int-2),(right_int+2))))
+        seq_to_search <- gsub("T","U",toupper(substr(viral_genome,(left_int+1-2),(right_int+1+2))))
         element <- unlist(str_extract_all(seq_to_search,as.character(sitelist[i,"ref_kmer"])))
         if(is_empty(element)==F){motifs <- append(motifs,element)}
       }else if(sitelist[i,"motif"]=="GUUNNA"){
-        seq_to_search <- gsub("T","U",toupper(substr(viral_genome,(left_int-2),(right_int+3))))
+        seq_to_search <- gsub("T","U",toupper(substr(viral_genome,(left_int+1-2),(right_int+1+3))))
         element <- unlist(str_extract_all(seq_to_search,as.character(sitelist[i,"ref_kmer"])))
         if(is_empty(element)==F){motifs <-append(motifs,element)}
       }
@@ -62,7 +64,7 @@ if(which_nucl=="U"){
   get_motif = function(left_int,right_int){
     motifs <- vector()
     for(i in 1:nrow(sitelist)){
-      seq_to_search <- gsub("T","U",toupper(substr(viral_genome,left_int-2,right_int+2)))
+      seq_to_search <- gsub("T","U",toupper(substr(viral_genome,left_int+1-2,right_int+1+2)))
       element <- unlist(str_extract_all(seq_to_search,as.character(sitelist[i,"ref_kmer"])))
       if(is_empty(element)==F){motifs <-append(motifs,element)}
     }
@@ -87,7 +89,9 @@ get_tx = function(ORF) {
 
 # Function that lists the assembly junction sites for each transcript of the assembly
 junc_blacklist = function(transcript) {
-  corr_row <- subset(assembly_junction_sites, assembly_junction_sites$id %in% transcript)
+  assembly_point_based <- assembly_junction_sites %>% 
+    mutate(blEnd1=(blEnd1-1),blEnd2=(blEnd2-1),blEnd3=(blEnd3-1))
+  corr_row <- subset(assembly_point_based, assembly_point_based$id %in% transcript)
   blacklist_vec <- as.numeric(as.vector(corr_row[1,7:12]))
   blacklist_vec <- blacklist_vec[!is.na(blacklist_vec)]
   black_int <- vector()
@@ -133,7 +137,7 @@ get_tx_length = function(transcript) {
 
 # Function to get the ORF encoded in a transcript
 get_ORF = function(transcript) {
-  temp <- names[with(names, id %in% transcript),]$ORF
+  temp <- names[with(names, id %in% transcript),]$name
   return(temp)
 }
 
@@ -141,8 +145,8 @@ get_ORF = function(transcript) {
 # Function to assign fragment id to each position
 assign_fragment_kmer_first_nucl = function(pos_first_nucl) {
   fragment_ID <- "No_Fragment"
-  for (i in 1:length(fragments_bed$ID)){
-    fragment_ID <- ifelse(pos_first_nucl >= fragments_bed$start[i] & (pos_first_nucl+4) <= fragments_bed$end[i], fragments_bed$ID[i], fragment_ID)
+  for (i in 1:length(fragments$ID)){
+    fragment_ID <- ifelse(pos_first_nucl >= fragments$start[i] & (pos_first_nucl+4) <= fragments$end[i], fragments$ID[i], fragment_ID)
   }
   return(fragment_ID)
 }
@@ -154,7 +158,8 @@ assign_fragment_kmer_first_nucl = function(pos_first_nucl) {
 
 # Function to get the ORF encoded nucleotide per nucleotide
 get_ORF_per_nucl = function(ORF_name,left_int,right_int) {
-  assembly_C <- subset(assembly,canonicity=="C")
+  assembly_C <- assembly_named_canonical %>%
+    dplyr::rename(ORF=name)
   temp <- assembly_C[with(assembly_C, ORF %in% ORF_name),]$id
   blacklist_tx <- vector()
   for (i in temp){
@@ -194,7 +199,7 @@ get_shared = function(data_list) {
   colnames(left) <- c("left_interval")
   interval <- cbind(left,right)%>%
     rowwise()%>%
-    dplyr::mutate(sequence=gsub("T","U",toupper(substr(viral_genome,left_interval, right_interval)))) %>%
+    dplyr::mutate(sequence=gsub("T","U",toupper(substr(viral_genome,(left_interval+1),(right_interval+1))))) %>%
     rowwise()%>%
     dplyr::mutate(mod=get_motif(left_interval,right_interval)) %>%
     dplyr::mutate(ORF=ORF_id)
@@ -219,14 +224,23 @@ get_presence = function(peaked_data){
 get_fragment_partial_overlap = function(left_int,right_int){
   fragments_vec <- apply(fragments, 1, function(x){
     if(exists("fragments_list")==F){fragments_list <- vector()}
-    if((c(left_int,right_int) %overlaps% c(as.numeric(x[2]),as.numeric(x[3])))==T){
-      fragments_list <- append(fragments_list,as.character(x[1]))
+    if((c(left_int,right_int) %overlaps% c(as.numeric(x[1]),as.numeric(x[2])))==T){
+      fragments_list <- append(fragments_list,as.character(x[3]))
     }
     return(fragments_list)
   })
   return(toString(unlist(fragments_vec)))
 }
 
+# Function to get UNUAR motif among the others
+get_UNUAR = function(mod_list){
+  id_variable <- F
+  for(i in subset(sitelist, motif=="UNUAR")$ref_kmer){
+    if(grepl(i,mod_list)==T){id_variable<-T}
+    else{id_variable <- id_variable}
+  }
+  return(id_variable)
+}
 
 # Function that returns scientific notation
 fancy_scientific <- function(l) {
