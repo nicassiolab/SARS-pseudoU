@@ -2,14 +2,21 @@
 set -e -o pipefail
 
 # load variables from general configuration file
-CURR_DIR=$(dirname "$(realpath "$0")")                                                  # obtain current script directory
+if [ -z "$path" ]
+then
+      CURR_DIR=$1
+else
+      CURR_DIR=$path
+fi
+
 CONFIG=$(echo $CURR_DIR | rev | cut -d'/' -f3- |rev)                                    # obtain configuration file directory
 source $CONFIG/general/config.sh
 
 # load local configuration file
-source $CURR_DIR/config.sh
+source $CURR_DIR/config.sh $CURR_DIR
 # load images
-source $CURR_DIR/images.sh
+source $CURR_DIR/images.sh $CURR_DIR
+
 
 WD="$BASEDIR/analysis/sgRNAs_mods_detection/$BASECALLING"
 FASTA="$BASEDIR/analysis/fasta/$BASECALLING"
