@@ -1,14 +1,8 @@
-library(tidyverse)
-library(tidyr)
-library(stringr)
-library(dplyr)
-library(xlsx)
-library(seqinr)
 library(rstudioapi)
-library(readr)
 
-source(paste(dirname(getSourceEditorContext()$path),"variables.R",sep="/"))     # source script with variables
 source(paste(dirname(getSourceEditorContext()$path),"functions.R",sep="/"))     # source script with functions
+source(paste(dirname(getSourceEditorContext()$path),"variables.R",sep="/"))     # source script with variables
+
 
 dir.create(RESULTSDIR,showWarnings = F)                                         # create results directory
 
@@ -24,9 +18,10 @@ IVT <-                                                                          
   ) %>%
   dplyr::mutate(start = (start - 1), end = (end - 1))                           # use 0-based coordinates
 
+# Fragments file
+fragments <- read_tsv(fragments_bedfile) %>%
+  mutate(start=(start-1),end=(end-1))
 
-fragments_bed <- read_tsv(fragments_bedfile, col_types = "cnn") %>%             # load genomic fragments bedfile
-  dplyr::mutate(start = (start - 1), end = (end - 1))
 
 SNPs <- read_tsv(file = SNPs_file) %>%                                          # load file containing known viral strains SNPs
   arrange(genomicPos) %>%
@@ -79,7 +74,7 @@ total <- gRNAs %>%
     kmer_overlaps_SNPs(genomicPos, SNPs)
   )) %>%
   rowwise() %>%
-  mutate(fragment_ID = get_fragment_partial_overlap(genomicPos, fragments_bed)) %>%  # check if any nucleotide of the k-mer overlaps a genomic fragment
+  mutate(fragment_ID = get_fragment_partial_overlap(genomicPos,fragments)) %>%  # check if any nucleotide of the k-mer overlaps a genomic fragment
   rowwise() %>%
   mutate(fleming= get_fleming(genomicPos))
    
@@ -103,19 +98,27 @@ total$fragment_ID <-
     )
   )
 
-# overlap of gRNAs k-mers with sgRNAs shared sites identified previously
-sgrnas_files <- list.files(SGRNASDIR, pattern="3_shared*", full.names = TRUE) 
-sgrna_sites <- lapply(sgrnas_files,function(x){
-  x<- read_tsv(x,col_names = c("chr","start","end","name","score","strand"))
-  return(x)
-}) 
-sgrna_sites <- bind_rows(sgrna_sites)
-
-grna_sites <- total %>%
-  subset(GMM_logit_pvalue<=pval_thresh_gRNAs & junctions=="No_junction" & abs(Logit_LOR)>=LOR_thresh) %>%
-  mutate(sgintersection=kmer_overlaps_sgRNA_site(genomicPos,sgrna_sites))
+gRNAs_sites <- total %>%
+  subset(GMM_logit_pvalue<=pval_thresh_gRNAs & junctions=="No_junction" & abs(Logit_LOR)>=LOR_thresh) 
+gRNAs_final <- gRNAs_sites %>%
+  dplyr::rename(genomicStartKmer = genomicPos, chr = ref_id) %>%
+  mutate(genomicEndKmer = (genomicStartKmer+5)) %>%
+  relocate(genomicEndKmer, .after = genomicStartKmer) 
+gRNAs_final_U <- gRNAs_final %>%
+  subset(grepl("U",ref_kmer)==T)
 
 
+
+# overlap of all cell lines pulled sgRNAs with gRNAs
+sgRNAs_final <- read.xlsx(SGRNAS_all_cell_lines,sheetName="all_canonical_Us_significant_si") %>%
+  subset(junction=="No junction" & significant==T & canonicity=="C") 
+sgRNAs_final <- unique(sgRNAs_final[c("chr", "genomicStartKmer","genomicEndKmer","ref_kmer","fragment_ID")])
+sgRNAs_final_U <- sgRNAs_final %>%
+  subset(grepl("U",ref_kmer)==T)
+
+
+common_sites <- inner_join(gRNAs_final_U,sgRNAs_final_U, by=c("chr","genomicStartKmer","genomicEndKmer","ref_kmer","fragment_ID"))
+not_common_sites <- subset(gRNAs_final_U, !(gRNAs_final_U$genomicStartKmer %in% sgRNAs_final_U$genomicStartKmer))
 
 ##############################  PLOTS ##############################
 pdf(rdp("WT_vs_IVT_sharkfin_no_junctions.pdf"),height=15,width=20)
@@ -124,7 +127,7 @@ pdf(rdp("WT_vs_IVT_sharkfin_no_junctions.pdf"),height=15,width=20)
     {
       ggplot(., aes(x=abs(Logit_LOR), y=-log10(GMM_logit_pvalue),color=fragment_ID)) +
         geom_point(size=2) +
-        {if (nrow(subset(total,(GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh)))>0) ggrepel::geom_label_repel(data=dplyr::filter(., (GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh & grepl("U",ref_kmer)==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=3,max.overlaps = Inf,force = 8)}+
+        {if (nrow(subset(total,(GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh)))>0) ggrepel::geom_label_repel(data=dplyr::filter(., (GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh & grepl("U",ref_kmer)==T)) ,aes(label=paste0(ref_kmer, " (",genomicPos,")")), colour="black", size=6,max.overlaps = Inf,force = 30)}+
         scale_color_manual(breaks = c("No_Fragment","Fragment1","Fragment1_2","Fragment2_3","Fragment3_4","Fragment4_5","Fragment5","Fragment6","Fragment6_7","Fragment7_8","Fragment8_9","Fragment9_10","Fragment10"),values=c("black","blue", "green","grey","gold","coral","aquamarine","darkgreen","navy","deeppink","magenta","cyan","orange")) +
         theme_bw(22) +
         geom_hline(yintercept=-log10(pval_thresh_gRNAs), linetype="dashed", color = "red")+
@@ -174,20 +177,80 @@ total %>%
 dev.off()
 
 
+
 ##############################  TABLES ##############################
-write.table(total,file=rdp("WT_vs_IVT_nanocompore.tsv"),sep = "\t", quote = F, col.names = T, row.names = F)
-write.table(grna_sites,file=rdp("WT_vs_IVT_sign.tsv"),sep = "\t", quote = F, col.names = T, row.names = F)
+total_bed <- total %>%
+  dplyr::rename(genomicStartKmer = genomicPos,chr=ref_id) %>%
+  mutate(genomicEndKmer = (genomicStartKmer+5)) %>%
+  relocate(genomicStartKmer,.after = (chr)) %>%
+  relocate(genomicEndKmer,.after = (genomicStartKmer))
+write.xlsx(as.data.frame(total_bed), file=rdp("WT_vs_IVT_nanocompore.xls"),
+           sheetName="WT_vs_IVT_all_sites",row.names=F,col.names=T)
+
+gRNAs_sites_bed <- gRNAs_sites %>%
+  dplyr::rename(genomicStartKmer = genomicPos,chr=ref_id) %>%
+  mutate(genomicEndKmer = (genomicStartKmer+5)) %>%
+  relocate(genomicStartKmer,.after = (chr)) %>%
+  relocate(genomicEndKmer,.after = (genomicStartKmer))
+write.xlsx(as.data.frame(gRNAs_sites_bed), file=rdp("WT_vs_IVT_nanocompore.xls"),
+           sheetName="WT_vs_IVT_sign_sites",row.names=F,col.names=T,append=T)
+
+gRNAs_final_U <- gRNAs_final_U %>%
+  relocate(genomicStartKmer,.after = (chr)) %>%
+  relocate(genomicEndKmer,.after = (genomicStartKmer))
+write.xlsx(as.data.frame(gRNAs_final_U), file=rdp("WT_vs_IVT_nanocompore.xls"),
+           sheetName="WT_vs_IVT_sign_U_sites",row.names=F,col.names=T,append=T)
+
+common_sites <- common_sites %>%
+  relocate(genomicStartKmer,.after = (chr)) %>%
+  relocate(genomicEndKmer,.after = (genomicStartKmer))
+write.xlsx(as.data.frame(common_sites), file=rdp("WT_vs_IVT_nanocompore.xls"),
+           sheetName="WT_vs_IVT_sign_U_sites_common_to_sgRNAs",row.names=F,col.names=T,append=T)
+
 
 
 ############## BED FILES FOR UCSC GENOME BROWSER TRACK ##############
-grna_bed <- grna_sites %>% 
-  dplyr::select(ref_id,genomicPos,ref_kmer)%>%
-  mutate(ref_id="NC_045512.2",start=(genomicPos),end=(genomicPos+5),id=paste0("ref_kmer=",ref_kmer),score=0,strand="+")%>%
-  dplyr::select(-ref_kmer,-genomicPos)
-  
-write.table(grna_bed,file=rdp("WT_vs_IVT_significant_gRNAs_nojunctions.bed"),sep = "\t", quote = F, col.names = F, row.names = F)
+grna_bed <- gRNAs_final_U %>%
+  dplyr::select(chr,genomicStartKmer,genomicEndKmer,ref_kmer)%>%
+  dplyr::rename(start=genomicStartKmer,end=genomicEndKmer)%>%
+  mutate(id=paste0("ref_kmer=",ref_kmer),score=0,strand="+")%>%
+  dplyr::select(-ref_kmer)
+write.table(grna_bed,file=rdp("WT_vs_IVT_significant_U_gRNAs_nojunctions.bed"),sep = "\t", quote = F, col.names = F, row.names = F)
+
+common_sites_bed <- common_sites %>%
+  dplyr::select(chr,genomicStartKmer,genomicEndKmer,ref_kmer)%>%
+  dplyr::rename(start=genomicStartKmer,end=genomicEndKmer)%>%
+  mutate(id=paste0("ref_kmer=",ref_kmer),score=0,strand="+")%>%
+  dplyr::select(-ref_kmer)
+write.table(common_sites_bed,file=rdp("WT_vs_IVT_common_significant_U.bed"),sep = "\t", quote = F, col.names = F, row.names = F)
+
 
 full_genome_bed <- grna_bed %>%
   mutate(ref_id="NC_045512.2",start=1,end=29903,id="genomicRNA",score=0,strand="+")%>%
+  dplyr::select(-ref_id)%>%
   head(1)
 write.table(full_genome_bed ,file=rdp("viral_gRNA.bed"),sep = "\t", quote = F, col.names = F, row.names = F)
+
+
+######################  Calculate hypergeometric test ##########################
+df <- total %>%
+  subset(grepl("U",ref_kmer)==T & junctions=="No_junction" & genomicPos>=SPIKETRSB) 
+
+m <- df %>%
+  subset(genomicPos %in% sgRNAs_final_U$genomicStartKmer)%>%
+  nrow()
+
+n <- (df %>%
+  nrow()) - m
+
+q <- nrow(common_sites)
+
+k <- df %>%
+  subset(GMM_logit_pvalue<=pval_thresh_gRNAs & abs(Logit_LOR)>=LOR_thresh) %>%
+  nrow()
+  
+
+phyper(q=(q-1),m=m,n=n,k=k,lower.tail=F)
+
+
+
