@@ -2,6 +2,7 @@
 
 BASEDIR="/hpcnfs/scratch/TSSM/cugolini/cov"
 FILES="/hpcnfs/scratch/FN/TL/cugolini/cov/SARS-CoV-2_pseudoU/scripts/files" 	                # directory of configuration files used for the analysis
+ENVS="/hpcnfs/home/ieo5215/miniconda/envs"							# path for anaconda environments
 IMG="$BASEDIR/img"
 MOUNT_DIR="/hpcnfs/scratch"                                     	                        # insert directory to mount on singularity images (needs to contain data and working directory)
 GENOME_FA="$FILES/edited.fa"                                             	                # viral genome fasta
