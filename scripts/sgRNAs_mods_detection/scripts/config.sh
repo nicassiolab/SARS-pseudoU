@@ -5,4 +5,4 @@ BASECALLING="guppy_initial"				# indicate basecalling version (since the initial
 which_nucl="U"						# nucleotide for which identifying the modification
 condition="WT"						# condition of processed samples (can be an array for multiple conditions)
 THREADS=20						# 20 is indicated for f5c, while 3 is indicated for nanocompore 
-PARALLEL_JOBS=5						# number of parallel jobs run by f5c eventalign
+PARALLEL_JOBS=10					# number of parallel jobs run by f5c eventalign
