@@ -1,0 +1,13 @@
+start	end	ID
+1	250	Fragment1
+251	500	Fragment1_2
+501	750	Fragment2_3
+751	1000	Fragment3_4
+1001	1250	Fragment4_5
+1251	1500	Fragment5
+28403	28652	Fragment6
+28653	28902	Fragment6_7
+28903	29152	Fragment7_8
+29153	29402	Fragment8_9
+29403	29652	Fragment9_10
+29653	29902	Fragment10
