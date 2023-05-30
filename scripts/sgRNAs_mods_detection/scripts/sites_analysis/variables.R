@@ -41,11 +41,6 @@ vero_results <- bdp(paste0("analysis/sgRNAs_mods_detection/",BASECALLING,"/VeroE
 
 all_cell_lines_results <- "/Volumes/scratch/temporary/cugolini/nanocompore/sampcomp/" # directory with nanocompore results from all cell lines pulled together
 
-#Pysamstats results
-calu3_pysam <- bdp(paste0("analysis/sgRNAs_mods_detection/",BASECALLING,"/CaLu3/pysamstats/alignments_to_genome/"))
-caco2_pysam <- bdp(paste0("analysis/sgRNAs_mods_detection/",BASECALLING,"/CaCo2/pysamstats/alignments_to_genome/"))
-vero_pysam <- bdp(paste0("analysis/sgRNAs_mods_detection/",BASECALLING,"/VeroE6/pysamstats/alignments_to_genome/"))
-
 ########################### PARAMETERS #########################################
 
 LOR_thresh <- 0.5                                                               # Log Odds Ratio threshold                                                          
