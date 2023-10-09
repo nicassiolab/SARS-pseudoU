@@ -1,4 +1,4 @@
-[nicassiolab] (https://github.com/nicassiolab)
+`[nicassiolab] (https://github.com/nicassiolab)`
 
 # Nanopore analysis on SARS-CoV-2 pseudouridylation 
 
