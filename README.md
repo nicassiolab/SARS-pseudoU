@@ -13,3 +13,4 @@ Edit the general configuration file present in the *general* directory before ru
   * *alignments* : directory containing scripts to align reads to reference files
   * *gRNA_mods_detection* : directory containing scripts to detect modifications on genomic viral RNAs
   * *sgRNAs_mods_detection* : directory containing scripts to detect modifications on subgenomic viral RNAs
+
