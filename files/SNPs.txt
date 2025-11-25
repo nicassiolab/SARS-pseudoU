@@ -1,0 +1,52 @@
+genomicPos	type	strain	isolate	reference
+23403	A->G	D614G	/	Korber et al., Cell, 2020
+20936	C->T	Beta Korea	/	Parker et al., JKMS, 2020
+22224	C->T	Beta Korea	/	Parker et al., JKMS, 2020
+25775	G->T	Beta Korea	/	Parker et al., JKMS, 2020
+26144	G->T	Beta Korea	/	Parker et al., JKMS, 2020
+26354	T->A	Beta Korea	/	Parker et al., JKMS, 2020
+3099	C	T	VE6-T	England Public Health	Matthews Lab
+4902	T	A	VE6-T	England Public Health	Matthews Lab
+6548	C	T	VE6-T	England Public Health	Matthews Lab
+8109	C	T	VE6-T	England Public Health	Matthews Lab
+8782	C	T	VE6-T	England Public Health	Matthews Lab
+9082	A	G	VE6-T	England Public Health	Matthews Lab
+10177	T	C	VE6-T	England Public Health	Matthews Lab
+10598	T	C	VE6-T	England Public Health	Matthews Lab
+10813	T	C	VE6-T	England Public Health	Matthews Lab
+12377	A	G	VE6-T	England Public Health	Matthews Lab
+18488	T	C	VE6-T	England Public Health	Matthews Lab
+19382	C	T	VE6-T	England Public Health	Matthews Lab
+19694	C	T	VE6-T	England Public Health	Matthews Lab
+20603	C	T	VE6-T	England Public Health	Matthews Lab
+20660	C	T	VE6-T	England Public Health	Matthews Lab
+22378	T	A	VE6-T	England Public Health	Matthews Lab
+22438	A	T	VE6-T	England Public Health	Matthews Lab
+24023	C	T	VE6-T	England Public Health	Matthews Lab
+26133	C	T	VE6-T	England Public Health	Matthews Lab
+26152	G	A	VE6-T	England Public Health	Matthews Lab
+26262	G	A	VE6-T	England Public Health	Matthews Lab
+26907	C	T	VE6-T	England Public Health	Matthews Lab
+29596	A	G	VE6-T	England Public Health	Matthews Lab
+3403	G	A	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+4902	T	A	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+6948	A	C	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+8851	G	A	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+9534	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+11083	G	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+12377	A	G	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+17241	T	C	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+18395	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+19382	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+20603	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+21005	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+22378	T	A	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+24023	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+25452	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+25978	G	A	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+26133	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+26262	G	A	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+26907	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+27964	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+28253	C	T	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab
+28361	G	A	Wuhan-Hu-1	Liverpool/REMRQ0001/2020	Matthews Lab

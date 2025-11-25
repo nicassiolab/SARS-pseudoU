@@ -1,0 +1,13 @@
+ID	start	end
+Fragment1	1	251
+Fragment1_2	252	501
+Fragment2_3	502	751
+Fragment3_4	752	1001
+Fragment4_5	1002	1251
+Fragment5	1252	1501
+Fragment6	28403	28652
+Fragment6_7	28653	28903
+Fragment7_8	28904	29153
+Fragment8_9	29154	29403
+Fragment9_10	29404	29653
+Fragment10	29654	29903
